@@ -1,7 +1,7 @@
 # js版文曲星nc1020模拟器
 ## 网页版文曲星nc1020[模拟器](https://leoncoolmoon.github.io/jswqx1020/) <br>
 
-从 https://dnbwg.cdn.bcebos.com/jswqx/index.html 基础上修改增加了图形界面<br>
+从原基础上修改增加了图形界面<br>
 ![screenshot](./nc1020.png)<br>
 orginal: http://bbs.emsky.net/viewthread.php?tid=33474<br>
 目前只在chrome浏览器测试过，别的浏览器应该也有能跑的。<br>
