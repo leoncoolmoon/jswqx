@@ -1,5 +1,5 @@
 # js版文曲星nc1020模拟器
-## 网页版文曲星nc1020[模拟器](https://leoncoolmoon.github.io/jswqx1020/) <br>
+## 网页版文曲星nc1020[模拟器](https://leoncoolmoon.github.io/jswqx/) <br>
 
 从原基础上修改增加了图形界面<br>
 ![screenshot](./nc1020.png)<br>
