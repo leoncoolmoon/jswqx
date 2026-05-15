@@ -87,6 +87,8 @@ var Wqx = (function (){
         this.shouldNmi = false;
         this.frameTimer = null;
         this.totalInsts = 0;
+        this.clockRecords = new Uint8Array(80);
+        this.syncClock();
 
         this.keypadmatrix = [
             [0,0,0,0,0,0,0,0],
@@ -655,20 +657,23 @@ var Wqx = (function (){
                 self._eraseBuff[j] = 0xFF;
             }
         }
+        var offset = addr & 0x1FFF;
         if (this._eraseStep === 0) {
-            if (addr === 0x5555 && value === 0xAA) {
+            if (offset === 0x1555 && value === 0xAA) {
                 this._eraseStep = 1;
                 return;
-            } else if (addr === 0x8000 && value === 0xF0) {
+            } else if (value === 0xF0) {
+                this._eraseStep = 0;
+                this._eraseType = 0;
                 return;
             }
         } else if (this._eraseStep === 1) {
-            if (addr === 0xAAAA && value === 0x55) {
+            if (offset === 0x0AAA && value === 0x55) {
                 this._eraseStep = 2;
                 return;
             }
         } else if (this._eraseStep === 2) {
-            if (addr === 0x5555) {
+            if (offset === 0x1555) {
                 switch (value){
                 case 0x90:
                     this._eraseSelectedBank = this.ram[io00_bank_switch];
@@ -707,7 +712,7 @@ var Wqx = (function (){
                 return;
             case 3:
             case 5:
-                if (addr === 0x5555 && value === 0xAA) {
+                if (offset === 0x1555 && value === 0xAA) {
                     this._eraseStep = 4;
                     return;
                 }
@@ -717,14 +722,14 @@ var Wqx = (function (){
             switch (this._eraseType) {
             case 3:
             case 5:
-                if (addr === 0xAAAA && value === 0x55) {
+                if (offset === 0x0AAA && value === 0x55) {
                     this._eraseStep = 5;
                     return;
                 }
                 break;
             }
         } else if (this._eraseStep === 5) {
-            if (addr === 0x5555 && value === 0x10) {
+            if (offset === 0x1555 && value === 0x10) {
                 erase_all_nor_banks();
                 this._eraseStep = 6;
                 if (this._eraseType === 5) {
@@ -748,7 +753,7 @@ var Wqx = (function (){
             }
         }
         // ????.
-        if (addr === 0x8000 && value === 0xF0) {
+        if (value === 0xF0) {
             this._eraseStep = 0;
             this._eraseType = 0;
             return;
@@ -901,8 +906,15 @@ var Wqx = (function (){
             if (++this.clockRecords[1] >= 60) {
                 this.clockRecords[1] = 0;
                 if (++this.clockRecords[2] >= 24) {
-                    this.clockRecords[2] &= 0;
-                    ++this.clockRecords[3];
+                    this.clockRecords[2] = 0;
+                    this.clockRecords[14] = (this.clockRecords[14] + 1) % 7;
+                    if (++this.clockRecords[3] > 31) {
+                        this.clockRecords[3] = 1;
+                        if (++this.clockRecords[8] > 12) {
+                            this.clockRecords[8] = 1;
+                            this.clockRecords[9] = (this.clockRecords[9] + 1) % 100;
+                        }
+                    }
                 }
             }
         }
@@ -919,10 +931,22 @@ var Wqx = (function (){
         return false;
     };
 
+    Wqx.prototype.syncClock = function (){
+        var now = new Date();
+        this.clockRecords[0] = now.getSeconds();
+        this.clockRecords[1] = now.getMinutes();
+        this.clockRecords[2] = now.getHours();
+        this.clockRecords[3] = now.getDate();
+        this.clockRecords[4] = 0;
+        this.clockRecords[8] = now.getMonth() + 1;
+        this.clockRecords[9] = now.getFullYear() % 100;
+        this.clockRecords[14] = now.getDay();
+    };
+
     Wqx.prototype.run = function (){
         this._timerCounter = 0;
         this._instCount = 0;
-        this.clockRecords = new Uint8Array(80);
+        this.syncClock();
         if (!this.frameTimer) {
             this.frameTimer = setInterval(this.frame.bind(this), 1000 / FrameRate);
         }

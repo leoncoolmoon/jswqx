@@ -100,8 +100,8 @@
             { name: 'F4', x: 403, y: 115, width: 28, height: 30 },
             { name: 'F12', x: 400, y: 190, width: 32, height: 32 },
 
-            // { name: 'F1', x: 2 ,y: 380 , width: 43, height: 32},  
-            // { name: 'F1', x: 45 ,y: 380 , width: 43, height: 32},  
+            // { name: 'F1', x: 2 ,y: 380 , width: 43, height: 32},
+            // { name: 'F1', x: 45 ,y: 380 , width: 43, height: 32},
             { name: 'Reset', x: 105, y: 390, width: 10, height: 10 },
             { name: 'F8', x: 131, y: 370, width: 43, height: 35 },
             { name: 'F9', x: 174, y: 370, width: 43, height: 35 },
@@ -331,7 +331,7 @@
         function screenArrangement(screenState) {
             console.log("screenState:" + screenState);
             //wxh 0:screen 1:window 2:scale for lcd 3: scale for device
-            //screenState: 0: vertical normal  1:horizontal normal 
+            //screenState: 0: vertical normal  1:horizontal normal
             //2: vertical full screen lcd 3: horizontal full screen lcd
             //4: vertical full screen device 5: horizontal full screen device
             // check if has physical keyboard
@@ -376,7 +376,7 @@
                         scale = [s, [(wxh[0][0] - wxh[3][0] * s) / 2, 0], [26, 122]];
                         console.log("s:" + s);
                     }
-                    
+
                     break;
                 case 4://vertical full screen device
                     //based on the width of the screen and the width of the device calculate the scale
@@ -385,7 +385,7 @@
                     console.log("s:" + s);
                     scale = [s, [0, (wxh[0][1] - wxh[3][1]) / 2], [18, 14]];
                     break;
-                case 5://horizontal full screen device  
+                case 5://horizontal full screen device
                     //based on the height of the screen and the height of the device calculate the scale
                     //keep the device in the center of the screen
                     var s = wxh[0][1] / wxh[3][1]; //scale of device
