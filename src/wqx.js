@@ -87,6 +87,8 @@ var Wqx = (function (){
         this.shouldNmi = false;
         this.frameTimer = null;
         this.totalInsts = 0;
+        this.clockRecords = new Uint8Array(80);
+        this.syncClock();
 
         this.keypadmatrix = [
             [0,0,0,0,0,0,0,0],
@@ -919,10 +921,19 @@ var Wqx = (function (){
         return false;
     };
 
+    Wqx.prototype.syncClock = function (){
+        var now = new Date();
+        this.clockRecords[0] = now.getSeconds();
+        this.clockRecords[1] = now.getMinutes();
+        this.clockRecords[2] = now.getHours();
+        this.clockRecords[3] = now.getDate();
+        this.clockRecords[4] = 0;
+    };
+
     Wqx.prototype.run = function (){
         this._timerCounter = 0;
         this._instCount = 0;
-        this.clockRecords = new Uint8Array(80);
+        this.syncClock();
         if (!this.frameTimer) {
             this.frameTimer = setInterval(this.frame.bind(this), 1000 / FrameRate);
         }
