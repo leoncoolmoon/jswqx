@@ -624,142 +624,167 @@ var Wqx = (function (){
     Wqx.prototype._eraseTemp2 = 0;
     Wqx.prototype._eraseBuff = null;
     Wqx.prototype.writeGE4000 = function (addr, value){
-//        console.log('writeGE4000: ' + addr.toString(16) + ', ' + value.toString(16));
-        var buffer = this.memmap[addr >> 13].buffer;
-        // writable bank.
-        if (buffer === this.ram || buffer === this.ramRomBank1) {
-            this.memmap[addr >> 13][addr & 0x1FFF] = value;
-            if (buffer === this.ramRomBank1) {
-                console.log('write to ramRomBank1');
-            }
-            return;
-        }
-        if (addr >= 0xE000) {
-            return;
-        }
-        var bank = this.ram[io00_bank_switch];
-        if (bank >= 0x20) {
-            return;
-        }
+    var buffer = this.memmap[addr >> 13].buffer;
+    // writable bank - 普通RAM写操作，最常见路径，直接返回
+    if (buffer === this.ram || buffer === this.ramRomBank1) {
+        this.memmap[addr >> 13][addr & 0x1FFF] = value;
+        return;
+    }
+    if (addr >= 0xE000) {
+        return;
+    }
+    var bank = this.ram[io00_bank_switch];
+    if (bank >= 0x20) {
+        return;
+    }
 
-        // ##############
-        // # erasing ....
-        var self = this;
-        function erase_all_nor_banks(){
-            for (var i=32; i--;) {
-                for (var j=0x8000; j--;) {
-                    self.norbankheader[i][j] = 0xFF;
-                }
-            }
-        }
-        function erase_buff(){
-            for (var j=256; j--;) {
-                self._eraseBuff[j] = 0xFF;
-            }
-        }
-        var offset = addr & 0x1FFF;
-        if (this._eraseStep === 0) {
-            if (offset === 0x1555 && value === 0xAA) {
-                this._eraseStep = 1;
-                return;
-            } else if (value === 0xF0) {
-                this._eraseStep = 0;
-                this._eraseType = 0;
-                return;
-            }
-        } else if (this._eraseStep === 1) {
-            if (offset === 0x0AAA && value === 0x55) {
-                this._eraseStep = 2;
-                return;
-            }
-        } else if (this._eraseStep === 2) {
-            if (offset === 0x1555) {
-                switch (value){
-                case 0x90:
-                    this._eraseSelectedBank = this.ram[io00_bank_switch];
-                    this._eraseTemp1 = this.norbankheader[this._eraseSelectedBank][0x4000];
-                    this._eraseTemp2 = this.norbankheader[this._eraseSelectedBank][0x4001];
-                    this.norbankheader[this._eraseSelectedBank][0x4000] = 0xC7;
-                    this.norbankheader[this._eraseSelectedBank][0x4001] = 0xD5;
-                    this._eraseStep = 3;
-                    this._eraseType = 1;
-                    return;
-                case 0xA0: this._eraseStep = 3; this._eraseType = 2; return;
-                case 0x80: this._eraseStep = 3; this._eraseType = 3; return;
-                case 0xA8: this._eraseStep = 3; this._eraseType = 4; return;
-                case 0x88: this._eraseStep = 3; this._eraseType = 5; return;
-                case 0x78: this._eraseStep = 3; this._eraseType = 6; return;
-                }
-            }
-        } else if (this._eraseStep === 3) {
-            switch (this._eraseType) {
-            case 1:
-                if (value === 0xF0) {
-                    this.norbankheader[this._eraseSelectedBank][0x4000] = this._eraseTemp1;
-                    this.norbankheader[this._eraseSelectedBank][0x4001] = this._eraseTemp2;
-                    this._eraseStep = 0;
-                    this._eraseType = 0;
-                    return;
-                }
-                break;
-            case 2:
-                this.may4000ptr[addr - 0x4000] &= value;
-                this._eraseStep = 4;
-                return;
-            case 4:
-                this._eraseStep = 4;
-                this._eraseBuff[addr % 256] &= value;
-                return;
-            case 3:
-            case 5:
-                if (offset === 0x1555 && value === 0xAA) {
-                    this._eraseStep = 4;
-                    return;
-                }
-                break;
-            }
-        } else if (this._eraseStep === 4) {
-            switch (this._eraseType) {
-            case 3:
-            case 5:
-                if (offset === 0x0AAA && value === 0x55) {
-                    this._eraseStep = 5;
-                    return;
-                }
-                break;
-            }
-        } else if (this._eraseStep === 5) {
-            if (offset === 0x1555 && value === 0x10) {
-                erase_all_nor_banks();
-                this._eraseStep = 6;
-                if (this._eraseType === 5) {
-                    erase_buff();
-                }
-                return;
-            }
-            if (this._eraseType === 3 && value === 0x30) {
-                var k = this.ram[io00_bank_switch];
-                var a = addr - addr % 0x800 - 0x4000;
-                for (var j=0x800; j--;) {
-                    this.norbankheader[k][a + j] = 0xFF;
-                }
-                this._eraseStep = 6;
-                return;
-            }
-            if (this._eraseType === 5 && value === 0x48) {
-                erase_buff();
-                this._eraseStep = 6;
-                return;
-            }
-        }
-        // ????.
-        if (value === 0xF0) {
+    // Flash 命令序列，必须用绝对地址（旧版的正确做法）
+    if (this._eraseStep === 0) {
+        if (addr === 0x5555 && value === 0xAA) {
+            this._eraseStep = 1;
+        } else if (value === 0xF0) {
             this._eraseStep = 0;
             this._eraseType = 0;
+        }
+        // 其他所有写操作直接忽略，不进状态机
+        return;
+    } else if (this._eraseStep === 1) {
+        if (addr === 0xAAAA && value === 0x55) {
+            this._eraseStep = 2;
+        }
+        return;
+    } else if (this._eraseStep === 2) {
+        if (addr === 0x5555) {
+            switch (value){
+            case 0x90:
+                this._eraseSelectedBank = bank;
+                this._eraseTemp1 = this.norbankheader[this._eraseSelectedBank][0x4000];
+                this._eraseTemp2 = this.norbankheader[this._eraseSelectedBank][0x4001];
+                this.norbankheader[this._eraseSelectedBank][0x4000] = 0xC7;
+                this.norbankheader[this._eraseSelectedBank][0x4001] = 0xD5;
+                this._eraseStep = 3; this._eraseType = 1; break;
+            case 0xA0: this._eraseStep = 3; this._eraseType = 2; break;
+            case 0x80: this._eraseStep = 3; this._eraseType = 3; break;
+            case 0xA8: this._eraseStep = 3; this._eraseType = 4; break;
+            case 0x88: this._eraseStep = 3; this._eraseType = 5; break;
+            case 0x78: this._eraseStep = 3; this._eraseType = 6; break;
+            }
+        }
+        return;
+    } else if (this._eraseStep === 3) {
+        switch (this._eraseType) {
+        case 1:
+            if (value === 0xF0) {
+                this.norbankheader[this._eraseSelectedBank][0x4000] = this._eraseTemp1;
+                this.norbankheader[this._eraseSelectedBank][0x4001] = this._eraseTemp2;
+                this._eraseStep = 0; this._eraseType = 0;
+            }
+            break;
+        case 2:
+            this.may4000ptr[addr - 0x4000] &= value;
+            this._eraseStep = 4;
+            this._saveNorBank(bank);  // ← 写入后持久化
+            break;
+        case 4:
+            this._eraseBuff[addr % 256] &= value;
+            this._eraseStep = 4;
+            break;
+        case 3:
+        case 5:
+            if (addr === 0x5555 && value === 0xAA) {
+                this._eraseStep = 4;
+            }
+            break;
+        }
+        return;
+    } else if (this._eraseStep === 4) {
+        switch (this._eraseType) {
+        case 3:
+        case 5:
+            if (addr === 0xAAAA && value === 0x55) {
+                this._eraseStep = 5;
+            }
+            break;
+        }
+        return;
+    } else if (this._eraseStep === 5) {
+        if (addr === 0x5555 && value === 0x10) {
+            this._eraseAllNorBanks();
+            this._eraseStep = 6;
+            if (this._eraseType === 5) this._eraseBuff.fill(0xFF);
+            this._saveAllNorBanks();  // ← 全擦后持久化
             return;
         }
-        console.log('error occurs when operate in flash! ' + addr.toString(16) + ',' + value.toString(16));
-    };
+        if (this._eraseType === 3 && value === 0x30) {
+            var k = bank;
+            var a = addr - addr % 0x800 - 0x4000;
+            for (var j = 0x800; j--;) {
+                this.norbankheader[k][a + j] = 0xFF;
+            }
+            this._eraseStep = 6;
+            this._saveNorBank(k);  // ← 块擦后持久化
+            return;
+        }
+        if (this._eraseType === 5 && value === 0x48) {
+            this._eraseBuff.fill(0xFF);
+            this._eraseStep = 6;
+            return;
+        }
+        if (value === 0xF0) {
+            this._eraseStep = 0; this._eraseType = 0;
+        }
+        return;
+    }
+};
+
+Wqx.prototype._eraseAllNorBanks = function(){
+    for (var i = 32; i--;) {
+        this.norbankheader[i].fill(0xFF);
+    }
+};
+
+// localStorage 持久化：按 bank 粒度存储，避免一次写太多
+Wqx.prototype._saveNorBank = function(bankIndex){
+    try {
+        var key = 'wqx_nor_' + bankIndex;
+        // Uint8Array 转 base64 存储
+        var binary = '';
+        var bytes = this.norbankheader[bankIndex];
+        for (var i = 0; i < bytes.length; i++) {
+            binary += String.fromCharCode(bytes[i]);
+        }
+        localStorage.setItem(key, btoa(binary));
+    } catch(e) {
+        console.warn('NOR save failed:', e);
+    }
+};
+
+Wqx.prototype._saveAllNorBanks = function(){
+    for (var i = 0; i < 32; i++) {
+        this._saveNorBank(i);
+    }
+};
+
+// 启动时从 localStorage 恢复 NOR Flash
+Wqx.prototype.loadNorFromStorage = function(){
+    var loaded = false;
+    for (var i = 0; i < 32; i++) {
+        try {
+            var key = 'wqx_nor_' + i;
+            var data = localStorage.getItem(key);
+            if (data) {
+                var binary = atob(data);
+                for (var j = 0; j < binary.length && j < 0x8000; j++) {
+                    this.norbankheader[i][j] = binary.charCodeAt(j);
+                }
+                loaded = true;
+            }
+        } catch(e) {
+            console.warn('NOR load failed for bank ' + i + ':', e);
+        }
+    }
+    return loaded;
+};
 
     Wqx.prototype.resetCpu = function (){
         this.cpu = new M65C02Context();
