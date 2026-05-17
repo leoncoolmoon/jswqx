@@ -72,7 +72,7 @@ var WqxKeyInput = function (){
         17: 'Esc'
     };
     var keyNameToKeypadMatrixIndex = {
-        'F12': 0x02,
+        'F12': 0x0F,
 
         'F5': 0x08,
         'F6': 0x09,
