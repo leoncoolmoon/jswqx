@@ -137,7 +137,8 @@ var WqxKeyInput = function (){
         if (wqxKeyCode) {
             var col = wqxKeyCode >> 3;
             var row = wqxKeyCode & 0x07;
-            this.wqx.keypadmatrix[row][col] = downOrUp ? 1 : 0;
+            //this.wqx.keypadmatrix[row][col] = downOrUp ? 1 : 0;
+			this.wqx.setKey(wqxKeyCode, downOrUp); 
         }
     };
     WqxKeyInput.prototype.keyDown = function (key){
