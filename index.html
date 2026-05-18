@@ -19,7 +19,7 @@
             --secondary-text: #98989d;
             --accent-color: #ff453a;
             --lcd-bg: #809a4e;
-            --device-shadow: 0 40px 100px rgba(0, 0, 0, 0.7), 0 0 20px rgba(0, 0, 0, 0.3);
+            --device-shadow: 0 5px 20px rgb(41 144 229 / 30%), 0 5px 20px rgb(98 90 215 / 68%);
             --drawer-bg: rgba(20, 20, 22, 0.95);
         }
 
@@ -29,7 +29,7 @@
             --text-color: #000000;
             --secondary-text: #8e8e93;
             --drawer-bg: rgba(242, 242, 247, 0.95);
-            --device-shadow: 0 20px 50px rgba(0,0,0,0.1);
+            --device-shadow: 0 20px 50px rgb(0 0 0 / 52%);
         }
 
         body {
@@ -68,6 +68,7 @@
             z-index: 1000;
             width: 44px;
             height: 44px;
+            padding: 10px;
             border-radius: 50%;
             background: var(--surface-color);
             backdrop-filter: blur(20px);
@@ -280,6 +281,7 @@
                               linear-gradient(90deg, rgba(0,0,0,0.06) 1px, transparent 1px);
             background-size: 2px 2px;
             background-position: 0 0;
+            transform-origin: left;
         }
 
         #lcd canvas {
@@ -465,8 +467,12 @@
         </div>
 
         <p style="margin-top:auto; font-size: 11px; text-align: center; opacity: 0.5; color: var(--secondary-text);">
-            NC1020 Emulator v2.0<br>
-            Persistent Storage Enabled
+            Fully opensource@<a href="https://github.com/leoncoolmoon/jswqx">github</a><br>
+            NC1020 Emulator v2.0 <br>
+            Persistent Storage Enabled <br>
+            若想要离线使用可以通过python构建的小型本地服务器运行。比如本项目集成的<a href="start.py">start.py</a> <br>
+            <a href="rom.zip">ROM文件下载地址</a> <br>
+
         </p>
     </div>
 
@@ -494,7 +500,7 @@
             const drawer = document.getElementById('drawer');
             const overlay = document.getElementById('overlay');
             const isOpen = drawer.classList.contains('open');
-
+            
             if (isOpen) {
                 drawer.classList.remove('open');
                 overlay.classList.remove('show');
@@ -515,18 +521,14 @@
                 document.documentElement.setAttribute('data-theme', theme);
             }
             localStorage.setItem('wqx_theme', theme);
-
+            
             // Update active state
             document.querySelectorAll('.theme-btn').forEach(btn => btn.classList.remove('active'));
             var btn = document.getElementById('theme-' + theme);
             if (btn) btn.classList.add('active');
         }
-
-        function toggleFullscreen() {
-            document.body.classList.toggle('fullscreen');
-            updateLayout();
-        }
-
+        
+  
         // Restore theme
         (function() {
             var savedTheme = localStorage.getItem('wqx_theme') || 'system';
@@ -674,11 +676,11 @@
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             ctx.globalCompositeOperation = 'source-over';
             ctx.drawImage(image, 0, 0);
-
+            
             ctx.globalCompositeOperation = 'destination-out';
             ctx.fillRect(15, 14, 376, 163);
             ctx.globalCompositeOperation = 'source-over';
-
+            
             for (var i = 0; i < indicatorStates.length; i++) {
                 if (indicatorStates[i]) {
                     renderIndicator(i);
@@ -707,10 +709,10 @@
             if (indicatorStates[index] === active) return;
             indicatorStates[index] = active;
             if (!image.complete) return;
-
+            
             var x = rulerCenters[index];
             var y = indicatorY;
-
+            
             if (active) {
                 renderIndicator(index);
             } else {
@@ -723,17 +725,17 @@
             var device = document.getElementById('device');
             var container = document.getElementById('device-container');
             var isFullscreen = document.body.classList.contains('fullscreen');
-
+            
             var h1 = document.querySelector('h1');
             var h1Height = (h1 && h1.offsetParent && !isFullscreen) ? h1.offsetHeight + 20 : 0;
-
+            
             var availableWidth = window.innerWidth - (isFullscreen ? 0 : 40);
             var availableHeight = window.innerHeight - h1Height - (isFullscreen ? 0 : 40);
-
+            
             var sWidth = availableWidth / 434;
             var sHeight = availableHeight / 543;
             var s = Math.min(sWidth, sHeight);
-
+            
             // Allow larger scale in fullscreen
             if (isFullscreen) {
                 if (s > 2.5) s = 2.5;
@@ -746,6 +748,65 @@
         }
 
         window.addEventListener('resize', updateLayout);
+
+
+
+       async function toggleFullscreen() {
+    // 1. 修复：检查全局 document.fullscreenElement
+    if (!document.fullscreenElement) {
+        try {
+            await outScr.requestFullscreen();
+            document.body.classList.add('fullscreen');
+        } catch (err) {
+            console.error(`无法进入全屏: ${err.message}`);
+        }
+    } else {
+        try {
+            // 2. 修复：由全局 document 调用 exitFullscreen()
+            await document.exitFullscreen();
+            document.body.classList.remove('fullscreen');
+        } catch (err) {
+            console.error(`无法退出全屏: ${err.message}`);
+        }
+    }
+    // 注意：requestFullscreen 是异步的，
+    // 最稳妥的布局更新建议放在下面的 fullscreenchange 监听函数中。
+    updateScrLayout(); 
+}
+
+function updateScrLayout() {
+	var outScr = document.getElementById('outScr');
+	var scr = document.getElementById('scr');
+	var isFullscreen = document.body.classList.contains('fullscreen');
+	var availableWidth = window.innerWidth - (isFullscreen ? 0 : 40);
+	var availableHeight = window.innerHeight - (isFullscreen ? 0 : 40);
+    
+	var sWidth = availableWidth / 320;
+	var sHeight = availableHeight / 160;
+	var s = Math.min(sWidth, sHeight);
+
+    if (isFullscreen) {
+        scr.style.transform = "scale(" + s + ")";
+    } else {
+        scr.style.transform = "scale(1)";
+	updateLayout();
+    }
+}
+
+// 监听用户按 Esc 键或点击内置按钮退出全屏
+document.addEventListener('fullscreenchange', () => {
+    // 3. 修复：判断当前全屏元素是否为 null
+    if (!document.fullscreenElement) {
+        document.body.classList.remove('fullscreen');
+    } else if (document.fullscreenElement === outScr) {
+        document.body.classList.add('fullscreen');
+    }
+    
+    // 全屏切换完成后，实时更新缩放布局
+    updateScrLayout();
+});
+
+
 
         // Key mapping coordinates
         var keys = [
@@ -870,7 +931,7 @@
             var offset = addr - this.lcdbuffaddr;
             var row = Math.floor(offset / 20);
             var col = offset % 20;
-
+            
             if (col === 0) {
                 var active = (value & 0x80) !== 0;
                 if (row >= 64 && row <= 72) {
@@ -878,7 +939,7 @@
                 }
                 // Other indicators (top icons etc.) could be added here
             }
-
+            
             _origUpdateLCD(addr, value);
         };
 
@@ -970,10 +1031,10 @@
 
         window.addEventListener('load', function() {
             log('App started, initializing...');
-            try {
-                loadZip();
-            } catch (e) {
-                log('Fatal initialization error: ' + e, '#f00');
+            try { 
+                loadZip(); 
+            } catch (e) { 
+                log('Fatal initialization error: ' + e, '#f00'); 
             }
         });
 
