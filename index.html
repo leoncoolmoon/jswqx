@@ -4,6 +4,8 @@
 <head>
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="theme-color" content="#0a84ff">
+    <link rel="manifest" href="manifest.json">
     <meta charset="utf-8" />
     <title>文曲星模拟器 - NC1020</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/BrowserFS/2.0.0/browserfs.min.js"></script>
@@ -470,9 +472,8 @@
             Fully opensource@<a href="https://github.com/leoncoolmoon/jswqx">github</a><br>
             NC1020 Emulator v2.0 <br>
             Persistent Storage Enabled <br>
-            若想要离线使用可以通过python构建的小型本地服务器运行。比如本项目集成的<a href="start.py">start.py</a> <br>
+            支持 PWA 离线使用 <br>
             <a href="rom.zip">ROM文件下载地址</a> <br>
-
         </p>
     </div>
 
@@ -1034,6 +1035,14 @@ function hasPhysicalKeyboard() {
                 loadZip(); 
             } catch (e) { 
                 log('Fatal initialization error: ' + e, '#f00'); 
+            }
+
+            if ('serviceWorker' in navigator) {
+                navigator.serviceWorker.register('./sw.js').then(function(registration) {
+                    log('ServiceWorker registration successful with scope: ' + registration.scope);
+                }, function(err) {
+                    log('ServiceWorker registration failed: ' + err, '#f00');
+                });
             }
         });
 
