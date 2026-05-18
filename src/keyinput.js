@@ -49,6 +49,7 @@ var WqxKeyInput = function (){
         38: 'Up',
         34: 'PageDown',
         9: 'Tab',
+        16: 'Shift',
         229: 'Shift',
         20: 'CapsLock',
         27: 'Esc',
