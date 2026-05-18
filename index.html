@@ -2,7 +2,7 @@
 <html>
 
 <head>
-    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta charset="utf-8" />
     <title>文曲星模拟器 - NC1020</title>
@@ -13,18 +13,28 @@
     <style>
         :root {
             --bg-color: #0d0d0f;
-            --surface-color: #1c1c1e;
+            --surface-color: rgba(28, 28, 30, 0.85);
             --primary-color: #0a84ff;
             --text-color: #ffffff;
             --secondary-text: #98989d;
             --accent-color: #ff453a;
             --lcd-bg: #809a4e;
             --device-shadow: 0 40px 100px rgba(0, 0, 0, 0.7), 0 0 20px rgba(0, 0, 0, 0.3);
+            --drawer-bg: rgba(20, 20, 22, 0.95);
+        }
+
+        [data-theme="light"] {
+            --bg-color: #f2f2f7;
+            --surface-color: rgba(255, 255, 255, 0.85);
+            --text-color: #000000;
+            --secondary-text: #8e8e93;
+            --drawer-bg: rgba(242, 242, 247, 0.95);
+            --device-shadow: 0 20px 50px rgba(0,0,0,0.1);
         }
 
         body {
             background-color: var(--bg-color);
-            background-image: radial-gradient(circle at 50% 30%, #1c1c21 0%, #0d0d0f 100%);
+            background-image: radial-gradient(circle at 50% 30%, var(--surface-color) 0%, var(--bg-color) 100%);
             color: var(--text-color);
             font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Helvetica Neue", Helvetica, Arial, sans-serif;
             display: flex;
@@ -37,31 +47,119 @@
             box-sizing: border-box;
             overflow-x: hidden;
             -webkit-font-smoothing: antialiased;
+            transition: background 0.3s ease, color 0.3s ease;
         }
 
         h1 {
-            color: #ffffff;
-            margin: 40px 0 24px 0;
+            color: var(--text-color);
+            margin: 20px 0 10px 0;
             font-weight: 700;
-            font-size: 32px;
+            font-size: 28px;
             letter-spacing: -0.5px;
-            text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+            opacity: 0.9;
+            text-shadow: 0 4px 12px rgba(0,0,0,0.3);
         }
 
-        .controls {
-            margin-bottom: 40px;
+        /* Settings Toggle Button */
+        #settings-toggle {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1000;
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            background: var(--surface-color);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255,255,255,0.1);
+            cursor: pointer;
             display: flex;
-            gap: 12px;
             align-items: center;
-            background: rgba(44, 44, 46, 0.7);
-            backdrop-filter: blur(25px);
-            -webkit-backdrop-filter: blur(25px);
-            padding: 8px 16px;
-            border-radius: 50px;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            z-index: 100;
+            justify-content: center;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+            transition: transform 0.2s ease;
         }
+        #settings-toggle:hover { transform: scale(1.05); }
+        #settings-toggle svg { width: 24px; height: 24px; fill: var(--text-color); }
+
+        /* Settings Drawer */
+        #drawer {
+            position: fixed;
+            top: 0;
+            right: -320px;
+            width: 300px;
+            max-width: 85vw;
+            height: 100vh;
+            background: var(--drawer-bg);
+            backdrop-filter: blur(30px);
+            -webkit-backdrop-filter: blur(30px);
+            z-index: 1001;
+            box-shadow: -10px 0 30px rgba(0,0,0,0.3);
+            transition: right 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+            padding: 20px;
+            box-sizing: border-box;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+            border-left: 1px solid rgba(255,255,255,0.05);
+        }
+        #drawer.open { right: 0; }
+
+        .drawer-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+            margin-top: env(safe-area-inset-top, 0);
+        }
+        .close-btn {
+            background: none;
+            border: none;
+            color: var(--text-color);
+            font-size: 24px;
+            cursor: pointer;
+            padding: 5px;
+            line-height: 1;
+        }
+
+        #overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100vw; height: 100vh;
+            background: rgba(0,0,0,0.4);
+            backdrop-filter: blur(2px);
+            z-index: 1000;
+            display: none;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        #overlay.show {
+            display: block;
+            opacity: 1;
+        }
+
+        .drawer-section {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        .drawer-section h3 {
+            margin: 0;
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--secondary-text);
+            font-weight: 600;
+        }
+
+        .controls-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+
+        .full-width { grid-column: span 2; }
 
         button {
             background-color: rgba(255, 255, 255, 0.1);
@@ -109,18 +207,21 @@
             align-items: center;
             justify-content: center;
             width: 100%;
-            padding: 40px 0;
+            padding: 20px 0;
             perspective: 2000px;
+            transition: all 0.3s ease;
+            min-height: 0;
+            box-sizing: border-box;
         }
 
         #device {
             position: relative;
             width: 434px;
             height: 543px;
-            transform-origin: top center;
-            border-radius: 30px;
+            transform-origin: center center;
+            border-radius: 10px;
             box-shadow: var(--device-shadow);
-            transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+            transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
         }
 
         /* The top layer: physical device frame with hole */
@@ -134,16 +235,16 @@
             cursor: pointer;
             pointer-events: auto;
             image-rendering: high-quality;
-            border-radius: 30px;
+            border-radius: 10px;
         }
 
         /* The bottom layer: LCD content aligned with physical screen area */
         #outScr {
             position: absolute;
-            left: 15px; /* Physical green area x1 */
-            top: 14px;  /* Physical green area y1 */
-            width: 376px; /* Physical green area width */
-            height: 163px; /* Physical green area height */
+            left: 15px;
+            top: 14px;
+            width: 376px;
+            height: 163px;
             z-index: 10;
             background-color: var(--lcd-bg);
             overflow: hidden;
@@ -151,8 +252,8 @@
             display: flex;
             align-items: center;
             justify-content: flex-start;
-            /* Inner shadow to simulate screen depth */
-            box-shadow: inset 0 3px 10px rgba(0,0,0,0.5), inset 0 -1px 3px rgba(255,255,255,0.2);
+            box-shadow: inset 0 4px 12px rgba(0,0,0,0.6), inset 0 -1px 3px rgba(255,255,255,0.2);
+            transition: background-color 0.5s ease;
         }
 
         #scr {
@@ -236,40 +337,151 @@
             #info { margin-top: 30px; padding: 20px; }
         }
 
+        /* Fullscreen Mode */
+        body.fullscreen {
+            background: #000;
+            justify-content: center;
+            overflow: hidden;
+        }
+        body.fullscreen h1, body.fullscreen #info { display: none; }
+        body.fullscreen #device-container {
+            padding: 0;
+            height: 100vh;
+            width: 100vw;
+        }
+        body.fullscreen #device {
+            box-shadow: none;
+        }
+        body.fullscreen #key { display: none; }
+        body.fullscreen #outScr {
+            position: fixed;
+            top: 0; left: 0;
+            width: 100vw; height: 100vh;
+            margin: 0; border: none;
+            box-shadow: none;
+            background: #000;
+            border-radius: 0;
+            z-index: 50;
+        }
+        body.fullscreen #scr {
+            margin: 0;
+            width: 100%; height: 100%;
+            background: none;
+        }
+        body.fullscreen #lcd canvas {
+            width: auto;
+            height: auto;
+            max-width: 100vw;
+            max-height: 100vh;
+            object-fit: contain;
+            mix-blend-mode: normal;
+            opacity: 1;
+        }
+
         @media (max-width: 900px) and (orientation: landscape) {
-            body { flex-direction: row; justify-content: center; gap: 40px; padding: 0 40px; }
             h1 { display: none; }
-            .controls {
-                flex-direction: column;
-                margin-bottom: 0;
-                padding: 20px 12px;
-                border-radius: 30px;
-            }
-            #flash_status {
-                border-left: none;
-                border-top: 1px solid rgba(255, 255, 255, 0.1);
-                margin-left: 0;
-                padding-left: 0;
-                padding-top: 12px;
-                margin-top: 12px;
-                min-width: 0;
-                text-align: center;
-            }
-            #info { display: none; }
             #device-container { padding: 0; width: auto; margin: 0; }
+        }
+
+        #fullscreen-btn {
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.1);
+            color: var(--text-color);
+            padding: 10px;
+            border-radius: 12px;
+            font-size: 14px;
+            cursor: pointer;
+            width: 100%;
+            margin-top: 8px;
+        }
+
+        .theme-switcher {
+            display: flex;
+            background: rgba(255,255,255,0.05);
+            border-radius: 12px;
+            padding: 4px;
+            gap: 4px;
+        }
+
+        .theme-btn {
+            flex: 1;
+            background: none;
+            border: none;
+            padding: 8px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+            color: var(--secondary-text);
+        }
+
+        .theme-btn.active {
+            background: var(--surface-color);
+            color: var(--primary-color);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+        }
+
+        .theme-btn:hover:not(.active) {
+            background: rgba(255,255,255,0.1);
         }
     </style>
 </head>
 
 <body onselectstart="return false">
-    <h1>文曲星模拟器</h1>
-    <div class="controls">
-        <button id="run" onclick="run();" disabled>Run</button>
-        <button id="stop" onclick="stop();" disabled>Stop</button>
-        <button id="reset" title="Click: Reset CPU&#10;Hold 2s: Clear save">Reset</button>
-        <button id="load_demo">ROM Loaded</button>
-        <span id="flash_status">Initializing...</span>
+    <div id="debug-log" style="position:fixed; top:10px; left:10px; z-index:1000; background:rgba(0,0,0,0.8); color:#0f0; font-family:monospace; font-size:10px; max-height:200px; overflow-y:auto; pointer-events:none; padding:5px; border-radius:5px; display:none;"></div>
+
+    <button id="settings-toggle" onclick="toggleDrawer()" title="Settings">
+        <svg viewBox="0 0 24 24"><path d="M19.14,12.94c0.04-0.3,0.06-0.61,0.06-0.94c0-0.32-0.02-0.64-0.07-0.94l2.03-1.58c0.18-0.14,0.23-0.41,0.12-0.61 l-1.92-3.32c-0.12-0.22-0.37-0.29-0.59-0.22l-2.39,0.96c-0.5-0.38-1.03-0.7-1.62-0.94L14.4,2.81c-0.04-0.24-0.24-0.41-0.48-0.41 h-3.84c-0.24,0-0.43,0.17-0.47,0.41L9.25,5.35C8.66,5.59,8.12,5.91,7.62,6.29L5.23,5.33c-0.22-0.08-0.47,0-0.59,0.22L2.71,8.87 c-0.11,0.2-0.06,0.47,0.12,0.61l2.03,1.58C4.81,11.36,4.79,11.68,4.79,12c0,0.32,0.02,0.64,0.06,0.94l-2.03,1.58 c-0.18,0.14-0.23,0.41-0.12,0.61l1.92,3.32c0.12,0.22,0.37,0.29,0.59,0.22l2.39-0.96c0.5,0.38,1.03,0.7,1.62,0.94l0.36,2.54 c0.05,0.24,0.24,0.41,0.48,0.41h3.84c0.24,0,0.44-0.17,0.47-0.41l0.36-2.54c0.59-0.24,1.13-0.56,1.62-0.94l2.39,0.96 c0.22,0.08,0.47,0,0.59-0.22l1.92-3.32c0.11-0.2,0.06-0.47-0.12-0.61L19.14,12.94z M12,15.5c-1.93,0-3.5-1.57-3.5-3.5 s1.57-3.5,3.5-3.5s3.5,1.57,3.5,3.5S13.93,15.5,12,15.5z"/></svg>
+    </button>
+
+    <div id="overlay" onclick="toggleDrawer()"></div>
+    <div id="drawer">
+        <div class="drawer-header">
+            <h2 style="margin:0; font-size: 18px;">Settings</h2>
+            <button class="close-btn" onclick="toggleDrawer()">&times;</button>
+        </div>
+        <div class="drawer-section">
+            <h3>Emulator Controls</h3>
+            <div class="controls-grid">
+                <button id="run" onclick="run();" disabled>Run</button>
+                <button id="stop" onclick="stop();" disabled>Stop</button>
+                <button id="reset" class="full-width" title="Click: Reset CPU&#10;Hold 2s: Clear save">Reset Device</button>
+                <div id="flash_status" class="full-width" style="margin:0; padding:0; border:none; font-size:12px;">Initializing...</div>
+            </div>
+        </div>
+
+        <div class="drawer-section">
+            <h3>Display Settings</h3>
+            <div class="theme-switcher">
+                <button class="theme-btn" id="theme-system" onclick="changeTheme('system')" title="Follow System">💻</button>
+                <button class="theme-btn" id="theme-light" onclick="changeTheme('light')" title="Light Mode">☀️</button>
+                <button class="theme-btn" id="theme-dark" onclick="changeTheme('dark')" title="Dark Mode">🌙</button>
+            </div>
+            <button id="fullscreen-btn" onclick="toggleFullscreen()">Toggle Fullscreen</button>
+        </div>
+
+        <div class="drawer-section">
+            <h3>Keyboard Shortcuts</h3>
+            <div style="display: grid; grid-template-columns: 1fr; gap: 8px; font-size: 13px; color: var(--secondary-text);">
+                <div>F1-F4: <span style="opacity: 0.8">Function Keys</span></div>
+                <div>Enter: <span style="opacity: 0.8">Confirm</span></div>
+                <div>Esc: <span style="opacity: 0.8">Back</span></div>
+                <div>Arrows: <span style="opacity: 0.8">Navigate</span></div>
+                <div>Letters: <span style="opacity: 0.8">Alpha Input</span></div>
+                <div>Shift/Ctrl: <span style="opacity: 0.8">Modifiers</span></div>
+            </div>
+        </div>
+
+        <p style="margin-top:auto; font-size: 11px; text-align: center; opacity: 0.5; color: var(--secondary-text);">
+            NC1020 Emulator v2.0<br>
+            Persistent Storage Enabled
+        </p>
     </div>
+
+    <h1>文曲星模拟器</h1>
 
     <div id="device-container">
         <div id="device">
@@ -284,27 +496,54 @@
         </div>
     </div>
 
-    <div id="info">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-            <strong>Keyboard Shortcuts</strong>
-            <span style="font-size: 12px; opacity: 0.6; background: rgba(255,255,255,0.1); padding: 4px 10px; border-radius: 10px;">NC1020</span>
-        </div>
-        <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; font-size: 13px;">
-            <div>F1-F4: <span style="opacity: 0.8">F1-F4 Function Keys</span></div>
-            <div>Enter: <span style="opacity: 0.8">Enter / Confirm</span></div>
-            <div>Esc: <span style="opacity: 0.8">Escape / Back</span></div>
-            <div>Arrow Keys: <span style="opacity: 0.8">Navigate</span></div>
-            <div>Letters: <span style="opacity: 0.8">Alpha Input</span></div>
-            <div>Shift/Ctrl: <span style="opacity: 0.8">Modifiers</span></div>
-        </div>
-        <hr style="border: 0; border-top: 1px solid rgba(255,255,255,0.05); margin: 25px 0;">
-        <p style="margin: 0; font-size: 12px; text-align: center; opacity: 0.7;">
-            Based on <a href="https://github.com/leoncoolmoon/jswqx" target="_blank">jswqx</a> core.
-            Redesigned for high-fidelity alignment and persistent storage.
-        </p>
-    </div>
 
     <script>
+        // ============================================================
+        // UI Drawer & Theme Logic
+        // ============================================================
+        function toggleDrawer() {
+            const drawer = document.getElementById('drawer');
+            const overlay = document.getElementById('overlay');
+            const isOpen = drawer.classList.contains('open');
+
+            if (isOpen) {
+                drawer.classList.remove('open');
+                overlay.classList.remove('show');
+                setTimeout(() => { if (!drawer.classList.contains('open')) overlay.style.display = 'none'; }, 300);
+            } else {
+                overlay.style.display = 'block';
+                setTimeout(() => {
+                    drawer.classList.add('open');
+                    overlay.classList.add('show');
+                }, 10);
+            }
+        }
+
+        function changeTheme(theme) {
+            if (theme === 'system') {
+                document.documentElement.removeAttribute('data-theme');
+            } else {
+                document.documentElement.setAttribute('data-theme', theme);
+            }
+            localStorage.setItem('wqx_theme', theme);
+
+            // Update active state
+            document.querySelectorAll('.theme-btn').forEach(btn => btn.classList.remove('active'));
+            var btn = document.getElementById('theme-' + theme);
+            if (btn) btn.classList.add('active');
+        }
+
+        function toggleFullscreen() {
+            document.body.classList.toggle('fullscreen');
+            updateLayout();
+        }
+
+        // Restore theme
+        (function() {
+            var savedTheme = localStorage.getItem('wqx_theme') || 'system';
+            changeTheme(savedTheme);
+        })();
+
         // ============================================================
         // NOR Flash localStorage Persistence
         // ============================================================
@@ -385,7 +624,30 @@
             btn.addEventListener('touchend', function(e){ e.preventDefault(); endHold(); });
         })();
 
+        function log(msg, color) {
+            console.log(msg);
+            var logEl = document.getElementById('debug-log');
+            if (logEl) {
+                if (color === '#f00') logEl.style.display = 'block';
+                var div = document.createElement('div');
+                div.style.color = color || '#0f0';
+                div.textContent = '[' + new Date().toLocaleTimeString() + '] ' + msg;
+                logEl.appendChild(div);
+                logEl.scrollTop = logEl.scrollHeight;
+            }
+        }
+
+        window.onerror = function(msg, url, line, col, error) {
+            log('ERR: ' + msg + ' (' + line + ':' + col + ')', '#f00');
+            return false;
+        };
+
+        window.onunhandledrejection = function(event) {
+            log('PROMISE ERR: ' + event.reason, '#f00');
+        };
+
         function setFlashStatus(msg) {
+            log(msg);
             var el = document.getElementById('flash_status');
             if (el) el.textContent = msg;
         }
@@ -414,69 +676,84 @@
         var canvas = document.getElementById('key');
         var ctx = canvas.getContext('2d');
         var image = new Image();
+        var indicatorStates = new Array(9).fill(false);
+        var rulerCenters = [66.4, 98.6, 131.3, 163.8, 195.5, 227.5, 260.1, 292.2, 324.9];
+        var indicatorY = 177.5; // Just below the screen hole
 
-        image.onload = function () {
-            // 1. Draw physical frame
+        function redrawFrame() {
+            if (!image.complete) return;
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.globalCompositeOperation = 'source-over';
             ctx.drawImage(image, 0, 0);
 
-            // 2. Cut hole for LCD (matching exactly the physical green area)
             ctx.globalCompositeOperation = 'destination-out';
             ctx.fillRect(15, 14, 376, 163);
             ctx.globalCompositeOperation = 'source-over';
 
+            for (var i = 0; i < indicatorStates.length; i++) {
+                if (indicatorStates[i]) {
+                    renderIndicator(i);
+                }
+            }
+        }
+
+        image.onload = function () {
+            redrawFrame();
             updateLayout();
         };
         image.src = 'nc1020.png';
 
-        var rulerCenters = [67.0, 99.0, 132.0, 163.5, 195.5, 227.5, 260.0, 292.0, 325.0];
-        var indicatorY = 177.5; // Just below the screen hole
+        function renderIndicator(index) {
+            var x = rulerCenters[index];
+            var y = indicatorY;
+            ctx.fillStyle = "rgba(0, 0, 0, 0.85)";
+            ctx.beginPath();
+            ctx.moveTo(x - 4, y);
+            ctx.lineTo(x + 4, y);
+            ctx.lineTo(x, y + 5);
+            ctx.fill();
+        }
 
         function drawIndicator(index, active) {
+            if (indicatorStates[index] === active) return;
+            indicatorStates[index] = active;
             if (!image.complete) return;
-            // Draw small triangle indicator above the number
+
             var x = rulerCenters[index];
             var y = indicatorY;
 
             if (active) {
-                ctx.fillStyle = "rgba(0, 0, 0, 0.85)";
-                ctx.beginPath();
-                ctx.moveTo(x - 4, y);
-                ctx.lineTo(x + 4, y);
-                ctx.lineTo(x, y + 5);
-                ctx.fill();
+                renderIndicator(index);
             } else {
                 // To "erase", we redraw the small patch from the original image.
-                // We use y=177 (the boundary of the hole) to avoid redrawing over the transparent viewport.
                 ctx.drawImage(image, x - 5, 177, 10, 10, x - 5, 177, 10, 10);
             }
         }
 
         function updateLayout() {
-            var isLandscape = window.matchMedia("(max-width: 900px) and (orientation: landscape)").matches;
+            var device = document.getElementById('device');
+            var container = document.getElementById('device-container');
 
-            var availableWidth = window.innerWidth - (isLandscape ? 150 : 60);
-            var availableHeight = window.innerHeight - (isLandscape ? 60 : 180);
+            if (document.body.classList.contains('fullscreen')) {
+                device.style.transform = "none";
+                return;
+            }
+
+            var isLandscape = window.matchMedia("(max-width: 900px) and (orientation: landscape)").matches;
+            var h1 = document.querySelector('h1');
+            var h1Height = (h1 && h1.offsetParent) ? h1.offsetHeight + 20 : 0;
+
+            var availableWidth = window.innerWidth - 40;
+            var availableHeight = window.innerHeight - h1Height - 40;
 
             var sWidth = availableWidth / 434;
             var sHeight = availableHeight / 543;
             var s = Math.min(sWidth, sHeight);
 
-            if (s > 1.8) s = 1.8;
-            if (s < 0.3) s = 0.3;
+            if (s > 1.5) s = 1.5;
+            if (s < 0.2) s = 0.2;
 
-            var device = document.getElementById('device');
             device.style.transform = "scale(" + s + ")";
-
-            var scaledHeight = 543 * s;
-            var margin = (scaledHeight - 543) / 2;
-
-            if (isLandscape) {
-                device.style.marginTop = margin + "px";
-                device.style.marginBottom = margin + "px";
-            } else {
-                device.style.marginTop = (margin + 20) + "px";
-                device.style.marginBottom = margin + "px";
-            }
         }
 
         window.addEventListener('resize', updateLayout);
@@ -626,11 +903,13 @@
         }
 
         function loadZip() {
+            log('Loading rom.zip...');
             var xhrZip = new XMLHttpRequest();
             xhrZip.open('GET', 'rom.zip', true);
             xhrZip.responseType = 'arraybuffer';
             xhrZip.onload = function () {
                 if (xhrZip.status === 200) {
+                    log('rom.zip loaded, mounting BFS...');
                     mountBFS(xhrZip.response);
                 } else {
                     setFlashStatus('❌ ROM Load Error: ' + xhrZip.status);
@@ -643,39 +922,47 @@
         }
 
         function mountBFS(zipData) {
-            var Buffer = BrowserFS.BFSRequire('buffer').Buffer;
-            BrowserFS.configure({
-                fs: "ZipFS",
-                options: { zipData: Buffer.from(zipData) }
-            }, function (e) {
-                if (e) {
-                    setFlashStatus('❌ FS Error: ' + e);
-                    return;
-                }
-                var fs = BrowserFS.BFSRequire('fs');
-                fs.readFile('/obj_lu.bin', function (err, data) {
-                    if (err) {
-                        setFlashStatus('❌ Missing obj_lu.bin');
+            try {
+                var Buffer = BrowserFS.BFSRequire('buffer').Buffer;
+                BrowserFS.configure({
+                    fs: "ZipFS",
+                    options: { zipData: Buffer.from(zipData) }
+                }, function (e) {
+                    if (e) {
+                        setFlashStatus('❌ FS Error: ' + e);
                         return;
                     }
-                    wqx.loadBROM(data);
-                    romLoaded = true;
-                    if (loadFlashFromStorage(wqx)) {
-                        norLoaded = true;
-                        check();
-                    } else {
-                        fs.readFile('/nc1020.fls', function (err, data) {
-                            if (err) {
-                                setFlashStatus('❌ Missing nc1020.fls');
-                                return;
-                            }
-                            wqx.loadNorFlash(data);
+                    log('BFS configured, reading files...');
+                    var fs = BrowserFS.BFSRequire('fs');
+                    fs.readFile('/obj_lu.bin', function (err, data) {
+                        if (err) {
+                            setFlashStatus('❌ Missing obj_lu.bin');
+                            return;
+                        }
+                        log('obj_lu.bin loaded');
+                        wqx.loadBROM(data);
+                        romLoaded = true;
+                        if (loadFlashFromStorage(wqx)) {
                             norLoaded = true;
                             check();
-                        });
-                    }
+                        } else {
+                            log('No saved flash, reading nc1020.fls...');
+                            fs.readFile('/nc1020.fls', function (err, data) {
+                                if (err) {
+                                    setFlashStatus('❌ Missing nc1020.fls');
+                                    return;
+                                }
+                                log('nc1020.fls loaded');
+                                wqx.loadNorFlash(data);
+                                norLoaded = true;
+                                check();
+                            });
+                        }
+                    });
                 });
-            });
+            } catch (err) {
+                log('BFS Exception: ' + err);
+            }
         }
 
         function run() {
@@ -692,7 +979,25 @@
             wqx.reset();
         }
 
-        try { loadZip(); } catch (e) { }
+        window.addEventListener('load', function() {
+            log('App started, initializing...');
+            try {
+                loadZip();
+            } catch (e) {
+                log('Fatal initialization error: ' + e, '#f00');
+            }
+        });
+
+        // Handle canvas context loss
+        canvas.addEventListener('webglcontextlost', function(e) {
+            e.preventDefault();
+            log('Canvas context lost!', '#f00');
+        }, false);
+
+        canvas.addEventListener('contextrestored', function() {
+            log('Canvas context restored');
+            redrawFrame();
+        }, false);
     </script>
 </body>
 
