@@ -749,6 +749,14 @@
 
         window.addEventListener('resize', updateLayout);
 
+function hasPhysicalKeyboard() {
+    // 检测是否支持鼠标悬停（手机/纯触控平板通常不支持 hover）
+    const canHover = window.matchMedia('(hover: hover)').matches;
+    // 检测是否使用精细指针（如鼠标，而不是粗糙的手指触控）
+    const isFinePointer = window.matchMedia('(pointer: fine)').matches;
+
+    return canHover && isFinePointer;
+}
 
 
        async function toggleFullscreen() {
@@ -771,7 +779,13 @@
     }
     // 注意：requestFullscreen 是异步的，
     // 最稳妥的布局更新建议放在下面的 fullscreenchange 监听函数中。
-    updateScrLayout(); 
+if (hasPhysicalKeyboard()) {
+    updateScrLayout();
+} else {
+    updateScrLayout();
+}
+
+     
 }
 
 function updateScrLayout() {
