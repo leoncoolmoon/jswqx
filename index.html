@@ -134,6 +134,7 @@
             cursor: pointer;
             pointer-events: auto;
             image-rendering: high-quality;
+            border-radius: 30px;
         }
 
         /* The bottom layer: LCD content aligned with physical screen area */
@@ -233,6 +234,29 @@
             .controls { margin-bottom: 20px; }
             #device-container { padding: 20px 0; }
             #info { margin-top: 30px; padding: 20px; }
+        }
+
+        @media (max-width: 900px) and (orientation: landscape) {
+            body { flex-direction: row; justify-content: center; gap: 40px; padding: 0 40px; }
+            h1 { display: none; }
+            .controls {
+                flex-direction: column;
+                margin-bottom: 0;
+                padding: 20px 12px;
+                border-radius: 30px;
+            }
+            #flash_status {
+                border-left: none;
+                border-top: 1px solid rgba(255, 255, 255, 0.1);
+                margin-left: 0;
+                padding-left: 0;
+                padding-top: 12px;
+                margin-top: 12px;
+                min-width: 0;
+                text-align: center;
+            }
+            #info { display: none; }
+            #device-container { padding: 0; width: auto; margin: 0; }
         }
     </style>
 </head>
@@ -421,30 +445,38 @@
                 ctx.lineTo(x, y + 5);
                 ctx.fill();
             } else {
-                // To "erase", we redraw the small patch from the original image
-                // Use a slightly larger area to ensure complete erasure
-                ctx.drawImage(image, x - 5, y - 1, 10, 8, x - 5, y - 1, 10, 8);
+                // To "erase", we redraw the small patch from the original image.
+                // We use y=177 (the boundary of the hole) to avoid redrawing over the transparent viewport.
+                ctx.drawImage(image, x - 5, 177, 10, 10, x - 5, 177, 10, 10);
             }
         }
 
         function updateLayout() {
-            var availableWidth = window.innerWidth - 60;
-            var availableHeight = window.innerHeight - 180;
+            var isLandscape = window.matchMedia("(max-width: 900px) and (orientation: landscape)").matches;
+
+            var availableWidth = window.innerWidth - (isLandscape ? 150 : 60);
+            var availableHeight = window.innerHeight - (isLandscape ? 60 : 180);
 
             var sWidth = availableWidth / 434;
             var sHeight = availableHeight / 543;
             var s = Math.min(sWidth, sHeight);
 
             if (s > 1.8) s = 1.8;
-            if (s < 0.4) s = 0.4;
+            if (s < 0.3) s = 0.3;
 
             var device = document.getElementById('device');
             device.style.transform = "scale(" + s + ")";
 
             var scaledHeight = 543 * s;
             var margin = (scaledHeight - 543) / 2;
-            device.style.marginTop = (margin + 20) + "px";
-            device.style.marginBottom = margin + "px";
+
+            if (isLandscape) {
+                device.style.marginTop = margin + "px";
+                device.style.marginBottom = margin + "px";
+            } else {
+                device.style.marginTop = (margin + 20) + "px";
+                device.style.marginBottom = margin + "px";
+            }
         }
 
         window.addEventListener('resize', updateLayout);
@@ -597,9 +629,16 @@
             var xhrZip = new XMLHttpRequest();
             xhrZip.open('GET', 'rom.zip', true);
             xhrZip.responseType = 'arraybuffer';
-            xhrZip.addEventListener('loadend', function () {
-                mountBFS(xhrZip.response);
-            }, false);
+            xhrZip.onload = function () {
+                if (xhrZip.status === 200) {
+                    mountBFS(xhrZip.response);
+                } else {
+                    setFlashStatus('❌ ROM Load Error: ' + xhrZip.status);
+                }
+            };
+            xhrZip.onerror = function() {
+                setFlashStatus('❌ Network Error');
+            };
             xhrZip.send();
         }
 
@@ -609,9 +648,16 @@
                 fs: "ZipFS",
                 options: { zipData: Buffer.from(zipData) }
             }, function (e) {
-                if (e) throw e;
+                if (e) {
+                    setFlashStatus('❌ FS Error: ' + e);
+                    return;
+                }
                 var fs = BrowserFS.BFSRequire('fs');
                 fs.readFile('/obj_lu.bin', function (err, data) {
+                    if (err) {
+                        setFlashStatus('❌ Missing obj_lu.bin');
+                        return;
+                    }
                     wqx.loadBROM(data);
                     romLoaded = true;
                     if (loadFlashFromStorage(wqx)) {
@@ -619,6 +665,10 @@
                         check();
                     } else {
                         fs.readFile('/nc1020.fls', function (err, data) {
+                            if (err) {
+                                setFlashStatus('❌ Missing nc1020.fls');
+                                return;
+                            }
                             wqx.loadNorFlash(data);
                             norLoaded = true;
                             check();
