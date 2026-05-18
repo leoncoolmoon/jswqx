@@ -759,66 +759,51 @@ function hasPhysicalKeyboard() {
 }
 
 
-       async function toggleFullscreen() {
-    // 1. 修复：检查全局 document.fullscreenElement
-    if (!document.fullscreenElement) {
-        try {
-            await outScr.requestFullscreen();
-            document.body.classList.add('fullscreen');
-        } catch (err) {
-            console.error(`无法进入全屏: ${err.message}`);
+        async function toggleFullscreen() {
+            if (!document.fullscreenElement) {
+                try {
+                    // 如果有实体键盘，仅将 LCD (outScr) 全屏；否则将整个页面全屏
+                    const target = hasPhysicalKeyboard() ? document.getElementById('outScr') : document.documentElement;
+                    await target.requestFullscreen();
+                } catch (err) {
+                    console.error(`无法进入全屏: ${err.message}`);
+                }
+            } else {
+                try {
+                    await document.exitFullscreen();
+                } catch (err) {
+                    console.error(`无法退出全屏: ${err.message}`);
+                }
+            }
         }
-    } else {
-        try {
-            // 2. 修复：由全局 document 调用 exitFullscreen()
-            await document.exitFullscreen();
-            document.body.classList.remove('fullscreen');
-        } catch (err) {
-            console.error(`无法退出全屏: ${err.message}`);
+
+        function updateScrLayout() {
+            var outScr = document.getElementById('outScr');
+            var scr = document.getElementById('scr');
+            var isFullscreen = !!document.fullscreenElement;
+
+            if (isFullscreen) {
+                document.body.classList.add('fullscreen');
+                if (document.fullscreenElement === outScr) {
+                    // LCD 仅全屏模式
+                    var sWidth = window.innerWidth / 320;
+                    var sHeight = window.innerHeight / 160;
+                    var s = Math.min(sWidth, sHeight);
+                    scr.style.transform = "scale(" + s + ")";
+                } else {
+                    // 整个虚拟机全屏模式
+                    updateLayout();
+                }
+            } else {
+                document.body.classList.remove('fullscreen');
+                scr.style.transform = "scale(1)";
+                updateLayout();
+            }
         }
-    }
-    // 注意：requestFullscreen 是异步的，
-    // 最稳妥的布局更新建议放在下面的 fullscreenchange 监听函数中。
-if (hasPhysicalKeyboard()) {
-    updateScrLayout();
-} else {
-    updateScrLayout();
-}
 
-     
-}
-
-function updateScrLayout() {
-	var outScr = document.getElementById('outScr');
-	var scr = document.getElementById('scr');
-	var isFullscreen = document.body.classList.contains('fullscreen');
-	var availableWidth = window.innerWidth - (isFullscreen ? 0 : 40);
-	var availableHeight = window.innerHeight - (isFullscreen ? 0 : 40);
-    
-	var sWidth = availableWidth / 320;
-	var sHeight = availableHeight / 160;
-	var s = Math.min(sWidth, sHeight);
-
-    if (isFullscreen) {
-        scr.style.transform = "scale(" + s + ")";
-    } else {
-        scr.style.transform = "scale(1)";
-	updateLayout();
-    }
-}
-
-// 监听用户按 Esc 键或点击内置按钮退出全屏
-document.addEventListener('fullscreenchange', () => {
-    // 3. 修复：判断当前全屏元素是否为 null
-    if (!document.fullscreenElement) {
-        document.body.classList.remove('fullscreen');
-    } else if (document.fullscreenElement === outScr) {
-        document.body.classList.add('fullscreen');
-    }
-    
-    // 全屏切换完成后，实时更新缩放布局
-    updateScrLayout();
-});
+        document.addEventListener('fullscreenchange', () => {
+            updateScrLayout();
+        });
 
 
 

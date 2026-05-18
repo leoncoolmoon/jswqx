@@ -68,7 +68,7 @@ var WqxKeyInput = function (){
 		56: 'Y',//8
 		57: 'U',//9
 		32: 'Equals',//space
-		8: 'Left',//bkspc
+		8: 'F2',//bkspc
         17: 'Esc'
     };
     var keyNameToKeypadMatrixIndex = {
