@@ -2,116 +2,546 @@
 <html>
 
 <head>
-    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta charset="utf-8" />
-    <title>文曲星模拟器</title>
+    <title>文曲星模拟器 - NC1020</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/BrowserFS/2.0.0/browserfs.min.js"></script>
     <script src="src/m65c02.js"></script>
-    <!--<script src="refs/wqxsimlogs.js"></script>-->
     <script src="src/wqx.js"></script>
     <script src="src/keyinput.js"></script>
     <style>
-        #wqx {
-            width: 370px;
+        :root {
+            --bg-color: #0d0d0f;
+            --surface-color: rgba(28, 28, 30, 0.85);
+            --primary-color: #0a84ff;
+            --text-color: #ffffff;
+            --secondary-text: #98989d;
+            --accent-color: #ff453a;
+            --lcd-bg: #809a4e;
+            --device-shadow: 0 40px 100px rgba(0, 0, 0, 0.7), 0 0 20px rgba(0, 0, 0, 0.3);
+            --drawer-bg: rgba(20, 20, 22, 0.95);
         }
 
-        #lcd {
-            width: 320px;
-            height: 160px;
+        [data-theme="light"] {
+            --bg-color: #f2f2f7;
+            --surface-color: rgba(255, 255, 255, 0.85);
+            --text-color: #000000;
+            --secondary-text: #8e8e93;
+            --drawer-bg: rgba(242, 242, 247, 0.95);
+            --device-shadow: 0 20px 50px rgba(0,0,0,0.1);
         }
 
-        #outScr {
-            position: absolute;
-            left: 26px;
-            top: 122px;
+        body {
+            background-color: var(--bg-color);
+            background-image: radial-gradient(circle at 50% 30%, var(--surface-color) 0%, var(--bg-color) 100%);
+            color: var(--text-color);
+            font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Helvetica Neue", Helvetica, Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+            min-height: 100vh;
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            overflow-x: hidden;
+            -webkit-font-smoothing: antialiased;
+            transition: background 0.3s ease, color 0.3s ease;
         }
 
-        #scr {
-            background-color: #98fb98;
-            width: 370px;
+        h1 {
+            color: var(--text-color);
+            margin: 20px 0 10px 0;
+            font-weight: 700;
+            font-size: 28px;
+            letter-spacing: -0.5px;
+            opacity: 0.9;
+            text-shadow: 0 4px 12px rgba(0,0,0,0.3);
         }
 
+        /* Settings Toggle Button */
+        #settings-toggle {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1000;
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            background: var(--surface-color);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255,255,255,0.1);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+            transition: transform 0.2s ease;
+        }
+        #settings-toggle:hover { transform: scale(1.05); }
+        #settings-toggle svg { width: 24px; height: 24px; fill: var(--text-color); }
+
+        /* Settings Drawer */
+        #drawer {
+            position: fixed;
+            top: 0;
+            right: -320px;
+            width: 300px;
+            max-width: 85vw;
+            height: 100vh;
+            background: var(--drawer-bg);
+            backdrop-filter: blur(30px);
+            -webkit-backdrop-filter: blur(30px);
+            z-index: 1001;
+            box-shadow: -10px 0 30px rgba(0,0,0,0.3);
+            transition: right 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+            padding: 20px;
+            box-sizing: border-box;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 24px;
+            border-left: 1px solid rgba(255,255,255,0.05);
+        }
+        #drawer.open { right: 0; }
+
+        .drawer-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+            margin-top: env(safe-area-inset-top, 0);
+        }
+        .close-btn {
+            background: none;
+            border: none;
+            color: var(--text-color);
+            font-size: 24px;
+            cursor: pointer;
+            padding: 5px;
+            line-height: 1;
+        }
+
+        #overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100vw; height: 100vh;
+            background: rgba(0,0,0,0.4);
+            backdrop-filter: blur(2px);
+            z-index: 1000;
+            display: none;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        #overlay.show {
+            display: block;
+            opacity: 1;
+        }
+
+        .drawer-section {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+        .drawer-section h3 {
+            margin: 0;
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--secondary-text);
+            font-weight: 600;
+        }
+
+        .controls-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+
+        .full-width { grid-column: span 2; }
+
+        button {
+            background-color: var(--surface-color);
+            color: var(--text-color);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 8px 20px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            outline: none;
+            text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8); /* Stronger shadow for visibility */
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+        }
+
+        [data-theme="light"] button {
+            border: 1px solid rgba(0, 0, 0, 0.1);
+            text-shadow: 0 1px 2px rgba(255, 255, 255, 1), 0 0 5px rgba(255, 255, 255, 0.5);
+        }
+
+        button:hover:not(:disabled) {
+            background-color: rgba(128, 128, 128, 0.2);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        button:active:not(:disabled) {
+            background-color: rgba(128, 128, 128, 0.15);
+            transform: translateY(0);
+        }
+
+        button:disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+        }
+
+        #flash_status {
+            font-size: 13px;
+            color: var(--secondary-text);
+            margin-left: 12px;
+            padding-left: 12px;
+            border-left: 1px solid rgba(255, 255, 255, 0.1);
+            min-width: 100px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        #device-container {
+            flex-grow: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            padding: 20px 0;
+            perspective: 2000px;
+            transition: all 0.3s ease;
+            min-height: 0;
+            box-sizing: border-box;
+        }
+
+        #device {
+            position: relative;
+            width: 434px;
+            height: 543px;
+            transform-origin: center center;
+            border-radius: 10px;
+            box-shadow: var(--device-shadow);
+            transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        /* The top layer: physical device frame with hole */
         #key {
             width: 434px;
             height: 543px;
+            position: absolute;
+            left: 0;
+            top: 0;
+            z-index: 20;
+            cursor: pointer;
+            pointer-events: auto;
+            image-rendering: high-quality;
+            border-radius: 10px;
         }
-    </style>
-</head>
 
-<body onselectstart="return false">
-    <h1>文曲星模拟器</h1>
-    <button id="run" onclick="run();" disabled>run</button>
-    <button id="stop" onclick="stop();" disabled>stop</button>
-    <!-- reset：单击重置CPU，长按2秒清除存档+重置（救砖用） -->
-    <button id="reset"
-        title="单击：重置CPU&#10;长按2秒：清除存档并重置（死机救砖）">reset</button>
-    <button id="load_demo">loadDemo</button>
-    <span id="flash_status" style="margin-left:10px; font-size:12px; color:gray;"></span>
+        /* The bottom layer: LCD content aligned with physical screen area */
+        #outScr {
+            position: absolute;
+            left: 15px;
+            top: 14px;
+            width: 376px;
+            height: 163px;
+            z-index: 10;
+            background-color: var(--lcd-bg);
+            overflow: hidden;
+            border-radius: 2px;
+            display: flex;
+            align-items: center;
+            justify-content: flex-start;
+            box-shadow: inset 0 4px 12px rgba(0,0,0,0.6), inset 0 -1px 3px rgba(255,255,255,0.2);
+            transition: background-color 0.5s ease;
+        }
 
-    <style>
-        /* 长按进度动画 */
+        #scr {
+            width: 320px;
+            height: 160px;
+            /* Align 320px LCD center with Ruler center (digit 5 at 195.5) */
+            /* (195.5 - 160) - 15 = 20.5px */
+            margin-left: 20.5px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            /* LCD pixel grid texture */
+            background-image: linear-gradient(rgba(0,0,0,0.06) 1px, transparent 1px),
+                              linear-gradient(90deg, rgba(0,0,0,0.06) 1px, transparent 1px);
+            background-size: 2px 2px;
+            background-position: 0 0;
+        }
+
+        #lcd canvas {
+            width: 320px;
+            height: 160px;
+            image-rendering: pixelated;
+            mix-blend-mode: multiply; /* Darkens the green background */
+            opacity: 0.85;
+            display: block;
+        }
+
+        #info {
+            max-width: 600px;
+            width: 90%;
+            font-size: 14px;
+            line-height: 1.6;
+            margin-top: 60px;
+            color: var(--secondary-text);
+            padding: 30px;
+            background: rgba(28, 28, 30, 0.5);
+            backdrop-filter: blur(20px);
+            border-radius: 24px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            margin-bottom: 60px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+
+        #info strong {
+            color: var(--text-color);
+        }
+
+        #info a {
+            color: var(--primary-color);
+            text-decoration: none;
+            font-weight: 500;
+        }
+
+        #info a:hover {
+            text-decoration: underline;
+        }
+
         #reset {
             position: relative;
             overflow: hidden;
-            transition: color 0.1s;
         }
         #reset::after {
             content: '';
             position: absolute;
-            left: 0; top: 0;
-            height: 100%;
+            left: 0; bottom: 0;
+            height: 3px;
             width: 0%;
-            background: rgba(220, 50, 50, 0.25);
-            transition: none;
+            background: var(--accent-color);
+            box-shadow: 0 0 10px var(--accent-color);
         }
         #reset.pressing::after {
             width: 100%;
             transition: width 2s linear;
         }
-        #reset.will-clear {
-            color: #c00;
-            font-weight: bold;
+
+        @media (max-height: 800px) {
+            h1 { font-size: 24px; margin: 20px 0 15px 0; }
+            .controls { margin-bottom: 20px; }
+            #device-container { padding: 20px 0; }
+            #info { margin-top: 30px; padding: 20px; }
+        }
+
+        /* Fullscreen Mode */
+        body.fullscreen {
+            background-color: var(--bg-color);
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+        }
+        body.fullscreen h1, body.fullscreen #info { display: none; }
+        body.fullscreen #device-container {
+            padding: 0;
+            height: 100vh;
+            width: 100vw;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        body.fullscreen #device {
+            box-shadow: 0 0 50px rgba(0,0,0,0.5);
+        }
+        /* In fullscreen, we keep the device look */
+
+        @media (max-width: 900px) and (orientation: landscape) {
+            h1 { display: none; }
+            #device-container { padding: 0; width: auto; margin: 0; }
+        }
+
+        #fullscreen-btn {
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.1);
+            color: var(--text-color);
+            padding: 10px;
+            border-radius: 12px;
+            font-size: 14px;
+            cursor: pointer;
+            width: 100%;
+            margin-top: 8px;
+        }
+
+        .theme-switcher {
+            display: flex;
+            background: rgba(255,255,255,0.05);
+            border-radius: 12px;
+            padding: 4px;
+            gap: 4px;
+        }
+
+        .theme-btn {
+            flex: 1;
+            background: none;
+            border: none;
+            padding: 8px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+            color: var(--secondary-text);
+        }
+
+        .theme-btn.active {
+            background: var(--surface-color);
+            color: var(--primary-color);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+        }
+
+        .theme-btn:hover:not(.active) {
+            background: rgba(255,255,255,0.1);
         }
     </style>
+</head>
 
-    <div id="device">
-        <div id="wqx" tabindex="0">
+<body onselectstart="return false">
+    <div id="debug-log" style="position:fixed; top:10px; left:10px; z-index:1000; background:rgba(0,0,0,0.8); color:#0f0; font-family:monospace; font-size:10px; max-height:200px; overflow-y:auto; pointer-events:none; padding:5px; border-radius:5px; display:none;"></div>
+
+    <button id="settings-toggle" onclick="toggleDrawer()" title="Settings">
+        <svg viewBox="0 0 24 24"><path d="M19.14,12.94c0.04-0.3,0.06-0.61,0.06-0.94c0-0.32-0.02-0.64-0.07-0.94l2.03-1.58c0.18-0.14,0.23-0.41,0.12-0.61 l-1.92-3.32c-0.12-0.22-0.37-0.29-0.59-0.22l-2.39,0.96c-0.5-0.38-1.03-0.7-1.62-0.94L14.4,2.81c-0.04-0.24-0.24-0.41-0.48-0.41 h-3.84c-0.24,0-0.43,0.17-0.47,0.41L9.25,5.35C8.66,5.59,8.12,5.91,7.62,6.29L5.23,5.33c-0.22-0.08-0.47,0-0.59,0.22L2.71,8.87 c-0.11,0.2-0.06,0.47,0.12,0.61l2.03,1.58C4.81,11.36,4.79,11.68,4.79,12c0,0.32,0.02,0.64,0.06,0.94l-2.03,1.58 c-0.18,0.14-0.23,0.41-0.12,0.61l1.92,3.32c0.12,0.22,0.37,0.29,0.59,0.22l2.39-0.96c0.5,0.38,1.03,0.7,1.62,0.94l0.36,2.54 c0.05,0.24,0.24,0.41,0.48,0.41h3.84c0.24,0,0.44-0.17,0.47-0.41l0.36-2.54c0.59-0.24,1.13-0.56,1.62-0.94l2.39,0.96 c0.22,0.08,0.47,0,0.59-0.22l1.92-3.32c0.11-0.2,0.06-0.47-0.12-0.61L19.14,12.94z M12,15.5c-1.93,0-3.5-1.57-3.5-3.5 s1.57-3.5,3.5-3.5s3.5,1.57,3.5,3.5S13.93,15.5,12,15.5z"/></svg>
+    </button>
+
+    <div id="overlay" onclick="toggleDrawer()"></div>
+    <div id="drawer">
+        <div class="drawer-header">
+            <h2 style="margin:0; font-size: 18px;">Settings</h2>
+            <button class="close-btn" onclick="toggleDrawer()">&times;</button>
+        </div>
+        <div class="drawer-section">
+            <h3>Emulator Controls</h3>
+            <div class="controls-grid">
+                <button id="run" onclick="run();" disabled>Run</button>
+                <button id="stop" onclick="stop();" disabled>Stop</button>
+                <button id="reset" class="full-width" title="Click: Reset CPU&#10;Hold 2s: Clear save">Reset Device</button>
+                <div id="flash_status" class="full-width" style="margin:0; padding:0; border:none; font-size:12px;">Initializing...</div>
+            </div>
+        </div>
+
+        <div class="drawer-section">
+            <h3>Display Settings</h3>
+            <div class="theme-switcher">
+                <button class="theme-btn" id="theme-system" onclick="changeTheme('system')" title="Follow System">💻</button>
+                <button class="theme-btn" id="theme-light" onclick="changeTheme('light')" title="Light Mode">☀️</button>
+                <button class="theme-btn" id="theme-dark" onclick="changeTheme('dark')" title="Dark Mode">🌙</button>
+            </div>
+            <button id="fullscreen-btn" onclick="toggleFullscreen()">Toggle Fullscreen</button>
+        </div>
+
+        <div class="drawer-section">
+            <h3>Keyboard Shortcuts</h3>
+            <div style="display: grid; grid-template-columns: 1fr; gap: 8px; font-size: 13px; color: var(--secondary-text);">
+                <div>F1-F4: <span style="opacity: 0.8">Function Keys</span></div>
+                <div>Enter: <span style="opacity: 0.8">Confirm</span></div>
+                <div>Esc: <span style="opacity: 0.8">Back</span></div>
+                <div>Arrows: <span style="opacity: 0.8">Navigate</span></div>
+                <div>Letters: <span style="opacity: 0.8">Alpha Input</span></div>
+                <div>Shift/Ctrl: <span style="opacity: 0.8">Modifiers</span></div>
+            </div>
+        </div>
+
+        <p style="margin-top:auto; font-size: 11px; text-align: center; opacity: 0.5; color: var(--secondary-text);">
+            NC1020 Emulator v2.0<br>
+            Persistent Storage Enabled
+        </p>
+    </div>
+
+    <h1>文曲星模拟器</h1>
+
+    <div id="device-container">
+        <div id="device">
+            <!-- Screen area behind the frame -->
             <div id="outScr">
                 <div id="scr">
                     <div id="lcd"></div>
                 </div>
-                <canvas id="mark"></canvas>
             </div>
+            <!-- Physical device frame on top -->
+            <canvas id="key" width="434" height="543"></canvas>
         </div>
-        <canvas id="key" width="434" height="543"></canvas>
     </div>
-    <p style="width: 434px;" id="info">
-       <span style="word-wrap: break-word;">orginal: <a href="http://bbs.emsky.net/viewthread.php?tid=33474">
-                http://bbs.emsky.net/viewthread.php?tid=33474</a><br />
-            目前只在chrome浏览器测试过，别的浏览器应该也有能跑的。<br>
-            若想要离线使用可以安装python，通过python构建的小型本地服务器运行。比如本项目集成的start.py<br>
-            2018.09.11 Dr.Quest优化版，压缩ROM到10M ZIP文件，添加了手机触摸屏支持<br>
-            2023.12.24 leoncoolmoon 修改了UI 增加ctrl为跳出键<br>
-            2026.05.17 leoncoolmoon 修复了flash存储，可以在浏览器内永久化保存<br>
-            <a href="https://github.com/leoncoolmoon/jswqx">github</a>
-            <br/>
-            <a href="rom.zip">ROM文件下载地址</a></span>
-    </p>
+
 
     <script>
         // ============================================================
-        // ★ NOR Flash localStorage 持久化工具函数
+        // UI Drawer & Theme Logic
+        // ============================================================
+        function toggleDrawer() {
+            const drawer = document.getElementById('drawer');
+            const overlay = document.getElementById('overlay');
+            const isOpen = drawer.classList.contains('open');
+
+            if (isOpen) {
+                drawer.classList.remove('open');
+                overlay.classList.remove('show');
+                setTimeout(() => { if (!drawer.classList.contains('open')) overlay.style.display = 'none'; }, 300);
+            } else {
+                overlay.style.display = 'block';
+                setTimeout(() => {
+                    drawer.classList.add('open');
+                    overlay.classList.add('show');
+                }, 10);
+            }
+        }
+
+        function changeTheme(theme) {
+            if (theme === 'system') {
+                document.documentElement.removeAttribute('data-theme');
+            } else {
+                document.documentElement.setAttribute('data-theme', theme);
+            }
+            localStorage.setItem('wqx_theme', theme);
+
+            // Update active state
+            document.querySelectorAll('.theme-btn').forEach(btn => btn.classList.remove('active'));
+            var btn = document.getElementById('theme-' + theme);
+            if (btn) btn.classList.add('active');
+        }
+
+        function toggleFullscreen() {
+            document.body.classList.toggle('fullscreen');
+            updateLayout();
+        }
+
+        // Restore theme
+        (function() {
+            var savedTheme = localStorage.getItem('wqx_theme') || 'system';
+            changeTheme(savedTheme);
+        })();
+
+        // ============================================================
+        // NOR Flash localStorage Persistence
         // ============================================================
         var FLASH_STORAGE_KEY = 'wqx_nor_flash';
 
-        // 把32个bank的NOR Flash全部保存到localStorage（base64编码）
         function saveFlashToStorage(wqxInstance) {
             try {
-                // 把整块nor（32 * 0x8000 = 1MB）转成base64存储
                 var bytes = wqxInstance.nor;
-                // 分块转换避免call stack溢出（btoa一次处理大字符串有限制）
-                var CHUNK = 8192;
+                var CHUNK = 16384;
                 var parts = [];
                 for (var i = 0; i < bytes.length; i += CHUNK) {
                     var chunk = bytes.subarray(i, i + CHUNK);
@@ -122,17 +552,14 @@
                     parts.push(btoa(binary));
                 }
                 localStorage.setItem(FLASH_STORAGE_KEY, JSON.stringify(parts));
-                setFlashStatus('💾 已自动保存');
+                setFlashStatus('💾 Auto-saved');
                 return true;
             } catch (e) {
-                // localStorage可能满了（5MB限制，NOR Flash是1MB，base64后约1.3MB，应该够用）
-                console.warn('Flash save failed:', e);
-                setFlashStatus('⚠️ 保存失败: ' + e.message);
+                setFlashStatus('⚠️ Storage full');
                 return false;
             }
         }
 
-        // 从localStorage恢复NOR Flash，返回true表示成功恢复
         function loadFlashFromStorage(wqxInstance) {
             try {
                 var stored = localStorage.getItem(FLASH_STORAGE_KEY);
@@ -145,26 +572,19 @@
                         wqxInstance.nor[offset++] = binary.charCodeAt(j);
                     }
                 }
-                // 重建norbankheader（因为nor数据变了，需要让wqx重新指向正确内存）
-                // wqx的norbankheader是nor的subarray视图，数据写入nor后视图自动更新，无需额外操作
-                console.log('Flash restored from localStorage, ' + offset + ' bytes');
-                setFlashStatus('✅ 已从存档恢复');
+                setFlashStatus('✅ Restored');
                 return true;
             } catch (e) {
-                console.warn('Flash load failed:', e);
-                setFlashStatus('⚠️ 恢复失败，将使用原始ROM');
                 return false;
             }
         }
 
-        // 清除保存的Flash数据并重置CPU（长按reset触发）
         function clearSavedFlash() {
             localStorage.removeItem(FLASH_STORAGE_KEY);
-            setFlashStatus('🗑️ 存档已清除，已重置');
-            location.reload();  // 改这里，reload代替wqx.reset()
+            setFlashStatus('🗑️ Cleared');
+            setTimeout(() => location.reload(), 500);
         }
 
-        // ── 长按 reset 按钮逻辑 ──────────────────────────────────────
         (function () {
             var btn = document.getElementById('reset');
             var holdTimer = null;
@@ -173,21 +593,15 @@
             function startHold() {
                 btn.classList.add('pressing');
                 holdTimer = setTimeout(function () {
-                    // 长按2秒：清存档 + 重置CPU
-                    btn.classList.remove('pressing');
-                    btn.classList.add('will-clear');
                     clearSavedFlash();
-                    setTimeout(function () { btn.classList.remove('will-clear'); }, 1500);
-                    holdTimer = null;
                 }, HOLD_MS);
             }
 
             function endHold() {
                 if (holdTimer !== null) {
-                    // 没到2秒松开：普通重置CPU
                     clearTimeout(holdTimer);
                     holdTimer = null;
-                    reset();
+                    if (btn.classList.contains('pressing')) reset();
                 }
                 btn.classList.remove('pressing');
             }
@@ -195,66 +609,145 @@
             btn.addEventListener('mousedown', startHold);
             btn.addEventListener('mouseup', endHold);
             btn.addEventListener('mouseleave', endHold);
-            btn.addEventListener('touchstart', function (e) { e.preventDefault(); startHold(); });
-            btn.addEventListener('touchend', function (e) { e.preventDefault(); endHold(); });
+            btn.addEventListener('touchstart', function(e){ e.preventDefault(); startHold(); });
+            btn.addEventListener('touchend', function(e){ e.preventDefault(); endHold(); });
         })();
 
+        function log(msg, color) {
+            console.log(msg);
+            var logEl = document.getElementById('debug-log');
+            if (logEl) {
+                if (color === '#f00') logEl.style.display = 'block';
+                var div = document.createElement('div');
+                div.style.color = color || '#0f0';
+                div.textContent = '[' + new Date().toLocaleTimeString() + '] ' + msg;
+                logEl.appendChild(div);
+                logEl.scrollTop = logEl.scrollHeight;
+            }
+        }
+
+        window.onerror = function(msg, url, line, col, error) {
+            log('ERR: ' + msg + ' (' + line + ':' + col + ')', '#f00');
+            return false;
+        };
+
+        window.onunhandledrejection = function(event) {
+            log('PROMISE ERR: ' + event.reason, '#f00');
+        };
+
         function setFlashStatus(msg) {
+            log(msg);
             var el = document.getElementById('flash_status');
             if (el) el.textContent = msg;
         }
 
-        // ============================================================
-        // ★ 给wqx实例注入Flash自动保存能力
-        //   在原有的loadNorFlash和writeGE4000完成后hook保存逻辑
-        // ============================================================
         function injectFlashAutoSave(wqxInstance) {
-            // hook loadNorFlash：每次手动拖入.fls文件后保存一次
             var _origLoadNorFlash = wqxInstance.loadNorFlash.bind(wqxInstance);
             wqxInstance.loadNorFlash = function(buffer) {
                 _origLoadNorFlash(buffer);
                 saveFlashToStorage(wqxInstance);
-                setFlashStatus('💾 已保存新ROM到存档');
             };
 
-            // hook writeGE4000：Flash写操作完成后延迟保存
-            // 用防抖避免高频写时每次都存（名片保存会连续写很多次）
             var saveTimer = null;
             var _origWriteGE4000 = wqxInstance.writeGE4000.bind(wqxInstance);
             wqxInstance.writeGE4000 = function(addr, value) {
                 _origWriteGE4000(addr, value);
-                // 只在eraseStep变为6（写操作完成）或eraseType===2（字节编程）后触发保存
-                // 用延迟合并多次写入为一次保存，减少localStorage写频率
                 if (saveTimer) clearTimeout(saveTimer);
                 saveTimer = setTimeout(function() {
                     saveFlashToStorage(wqxInstance);
-                }, 2000); // 最后一次写Flash后2秒保存
+                }, 3000);
             };
         }
 
         // ============================================================
-        // 以下为原有代码，仅在必要处添加了★注释
+        // Device UI Rendering & Interaction
         // ============================================================
+        var canvas = document.getElementById('key');
+        var ctx = canvas.getContext('2d');
+        var image = new Image();
+        var indicatorStates = new Array(9).fill(false);
+        var rulerCenters = [66.4, 98.6, 131.3, 163.8, 195.5, 227.5, 260.1, 292.2, 324.9];
+        var indicatorY = 177.5; // Just below the screen hole
 
-        var span = document.getElementById('mark');
-        span.width = 320;
-        span.height = 16;
-        span.style = "width: 320px;height: 16px;margin-top: 8px;background: #c1c1c1;"
-        displayNumber("black");
+        function redrawFrame() {
+            if (!image.complete) return;
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.globalCompositeOperation = 'source-over';
+            ctx.drawImage(image, 0, 0);
 
-        function displayNumber(color) {
-            var ctx = span.getContext('2d');
-            ctx.clearRect(0, 0, 370, 160);
-            ctx.font = "16px Arial";
-            ctx.fillStyle = color;
-            ctx.textAlign = "center";
-            ctx.textBaseline = "middle";
-            var offset = 16;
-            for (var i = 1; i < 10; i++) {
-                ctx.fillText(i, 32 * i + offset, 8);
+            ctx.globalCompositeOperation = 'destination-out';
+            ctx.fillRect(15, 14, 376, 163);
+            ctx.globalCompositeOperation = 'source-over';
+
+            for (var i = 0; i < indicatorStates.length; i++) {
+                if (indicatorStates[i]) {
+                    renderIndicator(i);
+                }
             }
         }
 
+        image.onload = function () {
+            redrawFrame();
+            updateLayout();
+        };
+        image.src = 'nc1020.png';
+
+        function renderIndicator(index) {
+            var x = rulerCenters[index];
+            var y = indicatorY;
+            ctx.fillStyle = "rgba(0, 0, 0, 0.85)";
+            ctx.beginPath();
+            ctx.moveTo(x - 4, y);
+            ctx.lineTo(x + 4, y);
+            ctx.lineTo(x, y + 5);
+            ctx.fill();
+        }
+
+        function drawIndicator(index, active) {
+            if (indicatorStates[index] === active) return;
+            indicatorStates[index] = active;
+            if (!image.complete) return;
+
+            var x = rulerCenters[index];
+            var y = indicatorY;
+
+            if (active) {
+                renderIndicator(index);
+            } else {
+                // To "erase", we redraw the small patch from the original image.
+                ctx.drawImage(image, x - 5, 177, 10, 10, x - 5, 177, 10, 10);
+            }
+        }
+
+        function updateLayout() {
+            var device = document.getElementById('device');
+            var container = document.getElementById('device-container');
+            var isFullscreen = document.body.classList.contains('fullscreen');
+
+            var h1 = document.querySelector('h1');
+            var h1Height = (h1 && h1.offsetParent && !isFullscreen) ? h1.offsetHeight + 20 : 0;
+
+            var availableWidth = window.innerWidth - (isFullscreen ? 0 : 40);
+            var availableHeight = window.innerHeight - h1Height - (isFullscreen ? 0 : 40);
+
+            var sWidth = availableWidth / 434;
+            var sHeight = availableHeight / 543;
+            var s = Math.min(sWidth, sHeight);
+
+            // Allow larger scale in fullscreen
+            if (isFullscreen) {
+                if (s > 2.5) s = 2.5;
+            } else {
+                if (s > 1.5) s = 1.5;
+            }
+            if (s < 0.2) s = 0.2;
+
+            device.style.transform = "scale(" + s + ")";
+        }
+
+        window.addEventListener('resize', updateLayout);
+
+        // Key mapping coordinates
         var keys = [
             { name: 'F1', x: 403, y: 10, width: 28, height: 30 },
             { name: 'F2', x: 403, y: 45, width: 28, height: 30 },
@@ -311,60 +804,38 @@
             { name: 'Right', x: 389, y: 510, width: 43, height: 32 },
         ];
 
-        function minum(a, b) {
-            return a > b ? b : a;
+        function handleMouseEvent(e, isDown) {
+            var rect = canvas.getBoundingClientRect();
+            var s = rect.width / 434;
+            var x = (e.clientX - rect.left) / s;
+            var y = (e.clientY - rect.top) / s;
+            var key = getKeyAt(x, y);
+            keyAction(key, isDown);
         }
 
-        var wxh = [[screen.width, screen.height], [window.innerWidth, window.innerHeight], [320, 160]];
-        var canvas = document.getElementById('key');
-        function getWxH() {
-            wxh[0] = [screen.width, screen.height];
-            wxh[1] = [window.innerWidth, window.innerHeight];
-        }
-        var ctx = canvas.getContext('2d');
-        var image = new Image();
-        image.onload = function () {
-            ctx.drawImage(image, 0, 0);
-            wxh[3] = [image.width, image.height];
-            ctx.globalAlpha = 0.1;
-            ctx.strokeStyle = 'black';
-            for (var i = 0; i < keys.length; i++) {
-                ctx.strokeRect(keys[i].x, keys[i].y, keys[i].width, keys[i].height);
-            }
-        };
-        image.src = 'nc1020.png';
-
-        canvas.addEventListener('mousedown', function (e) {
-            var rect = canvas.getBoundingClientRect();
-            var x = event.clientX - rect.left;
-            var y = event.clientY - rect.top;
-            var key = getKeyAt(x, y);
-            keyAction(key, true);
-        });
-        canvas.addEventListener('mouseup', function (e) {
-            var rect = canvas.getBoundingClientRect();
-            var x = event.clientX - rect.left;
-            var y = event.clientY - rect.top;
-            var key = getKeyAt(x, y);
-            keyAction(key, false);
-        });
+        canvas.addEventListener('mousedown', function (e) { handleMouseEvent(e, true); });
+        canvas.addEventListener('mouseup', function (e) { handleMouseEvent(e, false); });
+        canvas.addEventListener('mouseleave', function (e) { handleMouseEvent(e, false); });
         canvas.addEventListener('touchstart', function (e) {
-            var x = e.touches[0].clientX - canvas.offsetLeft;
-            var y = e.touches[0].clientY - canvas.offsetTop;
+            e.preventDefault();
+            var rect = canvas.getBoundingClientRect();
+            var s = rect.width / 434;
+            var x = (e.touches[0].clientX - rect.left) / s;
+            var y = (e.touches[0].clientY - rect.top) / s;
             var key = getKeyAt(x, y);
             keyAction(key, true);
-        });
+        }, {passive: false});
         canvas.addEventListener('touchend', function (e) {
-            var x = e.changedTouches[0].clientX - canvas.offsetLeft;
-            var y = e.changedTouches[0].clientY - canvas.offsetTop;
+            e.preventDefault();
+            var rect = canvas.getBoundingClientRect();
+            var s = rect.width / 434;
+            var x = (e.changedTouches[0].clientX - rect.left) / s;
+            var y = (e.changedTouches[0].clientY - rect.top) / s;
             var key = getKeyAt(x, y);
             keyAction(key, false);
-        });
+        }, {passive: false});
 
         function getKeyAt(x, y) {
-            var scale = document.body.style.zoom == "" ? 1 : document.body.style.zoom;
-            x = x / scale;
-            y = y / scale;
             for (var i = 0; i < keys.length; i++) {
                 if (keys[i].x <= x && x <= keys[i].x + keys[i].width &&
                     keys[i].y <= y && y <= keys[i].y + keys[i].height) {
@@ -374,313 +845,148 @@
             return null;
         }
 
-        var fullScreenState = 0;
-        var outScr = document.getElementById('outScr');
-
-        function keyAction(name, event) {
+        function keyAction(name, isDown) {
             if (name != null) {
-                console.log('Key ' + name + ' was ' + event);
-                if (event) {
+                if (isDown) {
                     keyInput.keyDown(name);
                 } else {
-                    if (name === "Reset") {
-                        reset();
-                        return;
-                    }
-                    keyInput.keyUp(name);
+                    if (name === "Reset") reset();
+                    else keyInput.keyUp(name);
                 }
             }
         }
 
-        var touching = false;
-        var lcdDiv = document.getElementById('lcd');
-        var elem = document.getElementById('wqx');
-        var device = document.getElementById('device');
+        // ============================================================
+        // Emulator Lifecycle
+        // ============================================================
+        var wqxDiv = document.getElementById('lcd');
+        var wqx = new Wqx(wqxDiv);
+        var keyInput = new WqxKeyInput(wqx, document.body);
 
-        elem.focus();
-        elem.addEventListener('contextmenu', function (evt) {
-            evt.preventDefault();
-            var eleme;
-            if (!hasPhysicalKeyboard) {
-                eleme = device;
-                fullScreenState = 1;
-            } else {
-                eleme = elem;
-                fullScreenState = 2;
+        // Hook LCD segments (indicators)
+        // NC1020 ruler indicators are bit 7 of the first byte (col 0) of rows 64-72
+        var _origUpdateLCD = wqx.updateLCD.bind(wqx);
+        wqx.updateLCD = function(addr, value) {
+            var offset = addr - this.lcdbuffaddr;
+            var row = Math.floor(offset / 20);
+            var col = offset % 20;
+
+            if (col === 0) {
+                var active = (value & 0x80) !== 0;
+                if (row >= 64 && row <= 72) {
+                    drawIndicator(row - 64, active);
+                }
+                // Other indicators (top icons etc.) could be added here
             }
-            if (eleme.requestFullscreen) {
-                eleme.requestFullscreen();
-            } else if (eleme.msRequestFullscreen) {
-                eleme.msRequestFullscreen();
-            } else if (eleme.mozRequestFullScreen) {
-                eleme.mozRequestFullScreen();
-            } else if (eleme.webkitRequestFullscreen) {
-                eleme.webkitRequestFullscreen();
-            }
-        }, false);
 
-        var hasPhysicalKeyboard = false;
+            _origUpdateLCD(addr, value);
+        };
 
-        function screenArrangement(screenState) {
-            var scale = [4, [0, 0], [26, 122]];
-            switch (screenState) {
-                case 0:
-                    scale = [wxh[1][0] / wxh[3][0], [0, 0], [26, 122]];
-                    break;
-                case 1:
-                    scale = [wxh[1][1] / wxh[3][1], [0, 0], [26, 122]];
-                    break;
-                case 2:
-                    if (hasPhysicalKeyboard) {
-                        var s = wxh[0][0] / wxh[2][0];
-                        scale = [s, [0, 0], [0, (wxh[0][1] - wxh[2][1] * s) / 2]];
-                    } else {
-                        var s = wxh[0][0] / wxh[3][0];
-                        scale = [s, [0, (wxh[0][1] - wxh[3][1]) / 2], [26, 122]];
-                    }
-                    break;
-                case 3:
-                    if (hasPhysicalKeyboard) {
-                        var s = wxh[0][1] / wxh[2][1];
-                        scale = [s, [0, 0], [(wxh[0][0] - wxh[2][0] * s) / 2, 0]];
-                    } else {
-                        var s = wxh[0][1] / wxh[3][1];
-                        scale = [s, [(wxh[0][0] - wxh[3][0] * s) / 2, 0], [26, 122]];
-                    }
-                    break;
-                case 4:
-                    var s = wxh[0][0] / wxh[3][0];
-                    scale = [s, [0, (wxh[0][1] - wxh[3][1]) / 2], [18, 14]];
-                    break;
-                case 5:
-                    var s = wxh[0][1] / wxh[3][1];
-                    scale = [s, [(wxh[0][0] - wxh[3][0] * s) / 2, 0], [18, 14]];
-                    break;
-                default:
-                    scale = [wxh[1][0] / wxh[3][0], [0, 0], [26, 122]];
-                    break;
-            }
-            return scale;
-        }
-
-        document.addEventListener('fullscreenchange', function (evt) {
-            getWxH();
-            var s;
-            isFullScreen = document.fullscreenElement ? true : false;
-            if (!isFullScreen) {
-                fullScreenState = 0;
-                span.style.background = "#c1c1c1";
-                displayNumber("black");
-                if (wxh[0][0] > wxh[0][1]) {
-                    s = screenArrangement(1);
-                } else {
-                    s = screenArrangement(0);
-                }
-                device.style.left = s[1][0] + "px";
-                device.style.top = s[1][1] + "px";
-                outScr.style.left = s[2][0] + "px";
-                outScr.style.top = s[2][1] + "px";
-            } else {
-                if (fullScreenState === 1) {
-                    if (wxh[0][0] > wxh[0][1]) {
-                        s = screenArrangement(5);
-                    } else {
-                        s = screenArrangement(4);
-                    }
-                    device.style.left = s[1][0] + "px";
-                    device.style.top = s[1][1] + "px";
-                    outScr.style.left = s[2][0] + "px";
-                    outScr.style.top = s[2][1] + "px";
-                } else if (fullScreenState === 2) {
-                    span.style.background = "none";
-                    displayNumber("white");
-                    if (wxh[0][0] > wxh[0][1]) {
-                        s = screenArrangement(3);
-                    } else {
-                        s = screenArrangement(2);
-                    }
-                    if (hasPhysicalKeyboard) {
-                        outScr.style.left = s[1][0] + "px";
-                        outScr.style.top = s[1][1] + "px";
-                    } else {
-                        device.style.left = s[1][0] + "px";
-                        device.style.top = s[1][1] + "px";
-                        outScr.style.left = s[2][0] + "px";
-                        outScr.style.top = s[2][1] + "px";
-                    }
-                }
-            }
-            document.body.style.zoom = s[0];
-            elem.focus();
-        }, false);
-
-        window.addEventListener('resize', function (evt) {
-            getWxH();
-            var s;
-            if (fullScreenState === 0) {
-                if (wxh[0][0] > wxh[0][1]) {
-                    s = screenArrangement(1);
-                } else {
-                    s = screenArrangement(0);
-                }
-                device.style.left = s[1][0] + "px";
-                device.style.top = s[1][1] + "px";
-                outScr.style.left = s[2][0] + "px";
-                outScr.style.top = s[2][1] + "px";
-            } else if (fullScreenState === 1) {
-                if (wxh[0][0] > wxh[0][1]) {
-                    s = screenArrangement(5);
-                } else {
-                    s = screenArrangement(4);
-                }
-                device.style.left = s[1][0] + "px";
-                device.style.top = s[1][1] + "px";
-                outScr.style.left = s[2][0] + "px";
-                outScr.style.top = s[2][1] + "px";
-            } else if (fullScreenState === 2) {
-                if (wxh[0][0] > wxh[0][1]) {
-                    s = screenArrangement(3);
-                } else {
-                    s = screenArrangement(2);
-                }
-                if (hasPhysicalKeyboard) {
-                    outScr.style.left = s[1][0] + "px";
-                    outScr.style.top = s[1][1] + "px";
-                } else {
-                    device.style.left = s[1][0] + "px";
-                    device.style.top = s[1][1] + "px";
-                    outScr.style.left = s[2][0] + "px";
-                    outScr.style.top = s[2][1] + "px";
-                }
-            }
-            elem.focus();
-            document.body.style.zoom = s[0];
-        }, false);
-
-        var wqx = new Wqx(lcdDiv);
-        var keyInput = new WqxKeyInput(wqx, elem);
-
-        // ★ 注入Flash自动保存能力
         injectFlashAutoSave(wqx);
-
-        keyInput.onpress = function (key) { };
-        keyInput.onrelease = function (key) { };
 
         var romLoaded = false;
         var norLoaded = false;
 
         function check() {
-            if (romLoaded && norLoaded) {
-                run();
-            }
+            if (romLoaded && norLoaded) run();
         }
 
-        lcdDiv.addEventListener('dragover', function (evt) {
-            evt.preventDefault();
-        }, false);
-
-        lcdDiv.addEventListener('drop', function (evt) {
-            var file;
-            try {
-                file = evt.dataTransfer.files[0];
-            } catch (ex) { }
-            var fileReader = new FileReader();
-            fileReader.addEventListener('loadend', function (evt) {
-                if (file.name.endsWith(".zip")) {
-                    mountBFS(fileReader.result);
-                    return;
-                }
-                if (file.name.endsWith(".fls")) {
-                    // ★ loadNorFlash已被hook，会自动保存到localStorage
-                    wqx.loadNorFlash(fileReader.result);
-                    norLoaded = true;
-                    check();
-                    return;
-                }
-                if (file.name.endsWith(".bin")) {
-                    wqx.loadBROM(fileReader.result);
-                    romLoaded = true;
-                    check();
-                    return;
-                }
-                console.log("unknown file type");
-            }, false);
-            fileReader.readAsArrayBuffer(file);
-            evt.preventDefault();
-        }, false);
-
         function loadZip() {
+            log('Loading rom.zip...');
             var xhrZip = new XMLHttpRequest();
-            xhrZip.addEventListener('progress', function (evt) {
-                var loadedKB = Math.round(evt.loaded / 1024);
-                var totalKB = Math.round(evt.total / 1024);
-                document.getElementById('load_demo').innerHTML = 'ROM加载中 ' + loadedKB + 'KB / ' + totalKB + " KB";
-            }, false);
-            xhrZip.addEventListener('loadend', function () {
-                document.getElementById('load_demo').innerHTML = 'ROM加载完毕';
-            }, false);
             xhrZip.open('GET', 'rom.zip', true);
             xhrZip.responseType = 'arraybuffer';
-            xhrZip.addEventListener('loadend', function () {
-                var zipData = xhrZip.response;
-                mountBFS(zipData);
-            }, false);
+            xhrZip.onload = function () {
+                if (xhrZip.status === 200) {
+                    log('rom.zip loaded, mounting BFS...');
+                    mountBFS(xhrZip.response);
+                } else {
+                    setFlashStatus('❌ ROM Load Error: ' + xhrZip.status);
+                }
+            };
+            xhrZip.onerror = function() {
+                setFlashStatus('❌ Network Error');
+            };
             xhrZip.send();
         }
 
         function mountBFS(zipData) {
-            var Buffer = BrowserFS.BFSRequire('buffer').Buffer;
-            BrowserFS.configure({
-                fs: "ZipFS",
-                options: {
-                    zipData: Buffer.from(zipData)
-                }
-            }, function (e) {
-                if (e) throw e;
-
-                var fs = BrowserFS.BFSRequire('fs');
-
-                fs.readFile('/obj_lu.bin', function (err, data) {
-                    wqx.loadBROM(data);
-                    romLoaded = true;
-
-                    // ★ 关键：BROM加载完后，优先尝试从localStorage恢复Flash
-                    //    如果恢复成功就跳过加载.fls文件，直接启动
-                    if (loadFlashFromStorage(wqx)) {
-                        norLoaded = true;
-                        check();
-                        // 后台仍然加载.fls但不触发check，仅作为备用
-                        // （可选：如果你想每次都用最新的.fls覆盖localStorage，把下面注释去掉）
-                        // fs.readFile('/nc1020.fls', function(err, data) {
-                        //     wqx.loadNorFlash(data); // 这会触发hook保存一次
-                        // });
-                    } else {
-                        // localStorage没有存档，从.fls文件加载并保存
-                        fs.readFile('/nc1020.fls', function (err, data) {
-                            wqx.loadNorFlash(data); // hook会自动保存到localStorage
+            try {
+                var Buffer = BrowserFS.BFSRequire('buffer').Buffer;
+                BrowserFS.configure({
+                    fs: "ZipFS",
+                    options: { zipData: Buffer.from(zipData) }
+                }, function (e) {
+                    if (e) {
+                        setFlashStatus('❌ FS Error: ' + e);
+                        return;
+                    }
+                    log('BFS configured, reading files...');
+                    var fs = BrowserFS.BFSRequire('fs');
+                    fs.readFile('/obj_lu.bin', function (err, data) {
+                        if (err) {
+                            setFlashStatus('❌ Missing obj_lu.bin');
+                            return;
+                        }
+                        log('obj_lu.bin loaded');
+                        wqx.loadBROM(data);
+                        romLoaded = true;
+                        if (loadFlashFromStorage(wqx)) {
                             norLoaded = true;
                             check();
-                        });
-                    }
+                        } else {
+                            log('No saved flash, reading nc1020.fls...');
+                            fs.readFile('/nc1020.fls', function (err, data) {
+                                if (err) {
+                                    setFlashStatus('❌ Missing nc1020.fls');
+                                    return;
+                                }
+                                log('nc1020.fls loaded');
+                                wqx.loadNorFlash(data);
+                                norLoaded = true;
+                                check();
+                            });
+                        }
+                    });
                 });
-            });
+            } catch (err) {
+                log('BFS Exception: ' + err);
+            }
         }
 
         function run() {
             wqx.run();
-            document.getElementById('run').setAttribute('disabled', 'disabled');
-            document.getElementById('stop').removeAttribute('disabled');
+            document.getElementById('run').disabled = true;
+            document.getElementById('stop').disabled = false;
         }
         function stop() {
             wqx.stop();
-            document.getElementById('stop').setAttribute('disabled', 'disabled');
-            document.getElementById('run').removeAttribute('disabled');
+            document.getElementById('stop').disabled = true;
+            document.getElementById('run').disabled = false;
         }
         function reset() {
             wqx.reset();
         }
 
-        try { loadZip(); } catch (e) { }
+        window.addEventListener('load', function() {
+            log('App started, initializing...');
+            try {
+                loadZip();
+            } catch (e) {
+                log('Fatal initialization error: ' + e, '#f00');
+            }
+        });
+
+        // Handle canvas context loss
+        canvas.addEventListener('webglcontextlost', function(e) {
+            e.preventDefault();
+            log('Canvas context lost!', '#f00');
+        }, false);
+
+        canvas.addEventListener('contextrestored', function() {
+            log('Canvas context restored');
+            redrawFrame();
+        }, false);
     </script>
 </body>
 

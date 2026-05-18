@@ -951,7 +951,6 @@ var Wqx = (function (){
             this.totalInsts++;
         }
 
-        document.title = String(this.frameCounter);
         this.frameCounter++;
     };
 
