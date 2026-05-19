@@ -1,9 +1,11 @@
-const CACHE_NAME = 'wqx-nc1020-v1';
+const CACHE_NAME = 'wqx-nc1020-v2';
 const ASSETS = [
   './',
   './index.html',
   './manifest.json',
   './nc1020.png',
+  './icon-192.png',
+  './icon-512.png',
   './rom.zip',
   './src/m65c02.js',
   './src/wqx.js',
