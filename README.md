@@ -19,7 +19,7 @@
 - 2018.09.11 Dr.Quest 优化版：压缩 ROM 到 10M ZIP 文件，添加了手机触摸屏支持。
 - 2023.12.24 leoncoolmoon 修改了 UI，增加 Ctrl 为跳出键。
 - 2026.05.17 leoncoolmoon 修复了 Flash 存储，可以在浏览器内永久化保存。
-- 2024 (Latest) 升级为 PWA，支持离线访问，移除对本地 Python 服务器的依赖。
+- 2026.05.19 升级为 PWA，支持离线访问，移除对本地 Python 服务器的依赖。
 
 ### 使用说明
 直接在支持现代 Web 标准的浏览器中打开 `index.html` 即可。由于使用了 Service Worker 和 Web Worker (可能)，建议通过 Web 服务器访问（如 GitHub Pages）。
