@@ -74,6 +74,30 @@ var Wqx = (function (){
         return new Uint8Array(buffer, byteOffset, byteLength);
     }
 
+    function uint8ArrayToBase64(uint8Array) {
+        var CHUNK_SIZE = 0x8000;
+        var index = 0;
+        var length = uint8Array.length;
+        var result = '';
+        var slice;
+        while (index < length) {
+            slice = uint8Array.subarray(index, Math.min(index + CHUNK_SIZE, length));
+            result += String.fromCharCode.apply(null, slice);
+            index += CHUNK_SIZE;
+        }
+        return btoa(result);
+    }
+
+    function base64ToUint8Array(base64) {
+        var binaryString = atob(base64);
+        var len = binaryString.length;
+        var bytes = new Uint8Array(len);
+        for (var i = 0; i < len; i++) {
+            bytes[i] = binaryString.charCodeAt(i);
+        }
+        return bytes;
+    }
+
     function Wqx(div, opts){
         opts = opts || {};
 
@@ -86,7 +110,6 @@ var Wqx = (function (){
         this.shouldIrq = false;
         this.shouldNmi = false;
         this.frameTimer = null;
-        this.totalInsts = 0;
 
         // 睡眠/唤醒状态，对应C++ slept/should_wake_up/wake_up_pending/wake_up_key
         this.slept = false;
@@ -131,6 +154,7 @@ var Wqx = (function (){
         this.initRam();
         this.initMemmap();
         this.initIo();
+        this.resetIo();
         this.resetCpu();
     }
 
@@ -181,7 +205,9 @@ var Wqx = (function (){
         this.memmap[mapA000] = getByteArray(this.ram, 0xA000, 0x2000);
         this.memmap[mapC000] = getByteArray(this.ram, 0xC000, 0x2000);
         this.memmap[mapE000] = getByteArray(this.ram, 0xE000, 0x2000);
-        this.ramRomBank1 = new Uint8Array(0x2000);
+        if (!this.ramRomBank1) {
+            this.ramRomBank1 = new Uint8Array(0x2000);
+        }
         this.fillC000BIOSBank(this.volume0array);
         this.memmap[mapC000] = getByteArray(this.bbsbankheader[0], 0, 0x2000);
         this.may4000ptr = this.volume0array[0];
@@ -226,6 +252,9 @@ var Wqx = (function (){
         this.io_read = this.readIO.bind(this);
         this.io_write = this.writeIO.bind(this);
         this._eraseBuff = new Uint8Array(256);
+    };
+
+    Wqx.prototype.resetIo = function (){
         this.ram[io0C_timer01_ctrl] = 0x28;
         this.ram[io1B_pwm_data] = 0;
         this.ram[io01_int_enable] = 0;
@@ -765,6 +794,85 @@ var Wqx = (function (){
         this.resetCpu();
     };
 
+    Wqx.prototype.saveState = function () {
+        var state = {
+            ram: uint8ArrayToBase64(this.ram),
+            nor: uint8ArrayToBase64(this.nor),
+            ramRomBank1: uint8ArrayToBase64(this.ramRomBank1),
+            zp40cache: uint8ArrayToBase64(this.zp40cache),
+            clockRecords: uint8ArrayToBase64(this.clockRecords),
+            cpu: {
+                reg_a: this.cpu.reg_a,
+                reg_x: this.cpu.reg_x,
+                reg_y: this.cpu.reg_y,
+                reg_pc: this.cpu.reg_pc,
+                reg_sp: this.cpu.reg_sp,
+                flag_c: this.cpu.flag_c,
+                flag_z: this.cpu.flag_z,
+                flag_i: this.cpu.flag_i,
+                flag_d: this.cpu.flag_d,
+                flag_b: this.cpu.flag_b,
+                flag_u: this.cpu.flag_u,
+                flag_v: this.cpu.flag_v,
+                flag_n: this.cpu.flag_n,
+                cycles: this.cpu.cycles
+            }
+        };
+        return state;
+    };
+
+    Wqx.prototype.loadState = function (state) {
+        if (!state) return;
+
+        this.ram.set(base64ToUint8Array(state.ram));
+        this.nor.set(base64ToUint8Array(state.nor));
+        this.ramRomBank1.set(base64ToUint8Array(state.ramRomBank1));
+        this.zp40cache.set(base64ToUint8Array(state.zp40cache));
+        if (state.clockRecords) {
+            this.clockRecords.set(base64ToUint8Array(state.clockRecords));
+        }
+
+        this.cpu.reg_a = state.cpu.reg_a;
+        this.cpu.reg_x = state.cpu.reg_x;
+        this.cpu.reg_y = state.cpu.reg_y;
+        this.cpu.reg_pc = state.cpu.reg_pc;
+        this.cpu.reg_sp = state.cpu.reg_sp;
+        this.cpu.flag_c = state.cpu.flag_c;
+        this.cpu.flag_z = state.cpu.flag_z;
+        this.cpu.flag_i = state.cpu.flag_i;
+        this.cpu.flag_d = state.cpu.flag_d;
+        this.cpu.flag_b = state.cpu.flag_b;
+        this.cpu.flag_u = state.cpu.flag_u;
+        this.cpu.flag_v = state.cpu.flag_v;
+        this.cpu.flag_n = state.cpu.flag_n;
+        this.cpu.cycles = state.cpu.cycles;
+
+        this.initMemmap();
+        this.initIo();
+
+        var bank = this.ram[io00_bank_switch];
+        if (bank < 0x20) {
+            this.may4000ptr = this.norbankheader[bank];
+        } else if (bank >= 0x80) {
+            if (this.ram[io0D_volumeid] & 0x01) {
+                this.may4000ptr = this.volume1array[bank];
+            } else if (this.ram[io0D_volumeid] & 0x02) {
+                this.may4000ptr = this.volume2array[bank];
+            } else {
+                this.may4000ptr = this.volume0array[bank];
+            }
+        }
+        this.switch4000ToBFFF();
+
+        var roabbs = this.ram[io0A_roa];
+        this.memmap[mapC000] = getByteArray(this.bbsbankheader[roabbs & 0x0F], 0, 0x2000);
+        this.memmap[map2000] = (roabbs & 0x04) ? this.ram4000_6000 : this.ram2000_4000;
+
+        this.setLcdStartAddr(((this.ram[io0C_lcd_config] & 0x03) << 12) | (this.ram[io06_lcd_config] << 4));
+
+        this.refreshLCD();
+    };
+
     Wqx.prototype.loadNorFlash = function (buffer){
         var byteOffset = 0;
         while (byteOffset < buffer.byteLength) {
@@ -777,6 +885,26 @@ var Wqx = (function (){
             byteOffset += 0x8000;
         }
         this.resetCpu();
+    };
+
+    Wqx.prototype.refreshLCD = function () {
+        if (this.lcdbuffaddr == null) return;
+        this.canvasCtx.clearRect(0, 0, 160, 80);
+        for (var row = 0; row < 80; row++) {
+            for (var col = 0; col < 20; col++) {
+                var addr = this.lcdbuffaddr + row * 20 + col;
+                var value = this.ram[addr];
+                var p = col * 8;
+                if (value & 0x80) { if (col > 0) this.canvasCtx.fillRect(p + 0, row, 1, 1); }
+                if (value & 0x40) this.canvasCtx.fillRect(p + 1, row, 1, 1);
+                if (value & 0x20) this.canvasCtx.fillRect(p + 2, row, 1, 1);
+                if (value & 0x10) this.canvasCtx.fillRect(p + 3, row, 1, 1);
+                if (value & 0x08) this.canvasCtx.fillRect(p + 4, row, 1, 1);
+                if (value & 0x04) this.canvasCtx.fillRect(p + 5, row, 1, 1);
+                if (value & 0x02) this.canvasCtx.fillRect(p + 6, row, 1, 1);
+                if (value & 0x01) this.canvasCtx.fillRect(p + 7, row, 1, 1);
+            }
+        }
     };
 
     Wqx.prototype.updateLCD = function (addr, value){
@@ -873,7 +1001,6 @@ var Wqx = (function (){
 
     Wqx.prototype.run = function (){
         this._timerCounter = 0;
-        this._instCount = 0;
         // ROM初始化后同步一次真实时间；ROM可能会再覆盖，属正常现象
         this.syncClock();
         if (!this.frameTimer) {
@@ -887,6 +1014,7 @@ var Wqx = (function (){
     };
 
     Wqx.prototype.reset = function (){
+        this.resetIo();
         this.resetCpu();
         this.frameCounter = 0;
         this.nmiCounter = 0;
@@ -927,8 +1055,6 @@ var Wqx = (function (){
                 this.cpu.doIrq();
             }
 
-            this._instCount++;
-
             // timer1（每4ms）：含唤醒逻辑，对应C++ timer1_cycles 分支
             if (this.cpu.cycles >= clockCycles) {
                 this.clockCounter++;
@@ -947,10 +1073,11 @@ var Wqx = (function (){
                     this.shouldIrq = true;
                 }
             }
-
-            this.totalInsts++;
         }
 
+        if (this.frameCounter % 500 === 0 && this.onSaveState) {
+            this.onSaveState();
+        }
         this.frameCounter++;
     };
 
