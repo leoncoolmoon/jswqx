@@ -499,6 +499,7 @@
 
 
     <script>
+        
         // ============================================================
         // UI Drawer & Theme Logic
         // ============================================================
@@ -952,7 +953,24 @@ function hasPhysicalKeyboard() {
 
         var romLoaded = false;
         var norLoaded = false;
-
+        
+        (function(){
+            var dropZone = document.getElementById('device');
+            dropZone.addEventListener('dragover', function(e){ e.preventDefault(); });
+            dropZone.addEventListener('drop', function(e){
+                e.preventDefault();
+                var file = e.dataTransfer.files[0];
+                if (!file || !file.name.endsWith('.fls')) return;
+                var reader = new FileReader();
+                reader.onload = function(ev){
+                    wqx.loadNorFlash(ev.target.result);
+                    saveFlashToStorage(wqx);
+                    setFlashStatus('💾 已加载 ' + file.name);
+                };
+                reader.readAsArrayBuffer(file);
+            });
+        })();
+        
         function check() {
             if (romLoaded && norLoaded) run();
         }
