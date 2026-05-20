@@ -960,6 +960,7 @@ function hasPhysicalKeyboard() {
             dropZone.addEventListener('drop', function(e){
                 e.preventDefault();
                 var file = e.dataTransfer.files[0];
+                console.log('dropped:', file ? file.name : 'null');  // 加这行
                 if (!file || !file.name.endsWith('.fls')) return;
                 var reader = new FileReader();
                 reader.onload = function(ev){
