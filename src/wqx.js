@@ -94,16 +94,8 @@ var Wqx = (function (){
         this.wakeUpPending = false;
         this.wakeUpKey = 0;
 
-        this.keypadmatrix = [
-            [0,0,0,0,0,0,0,0],
-            [0,0,0,0,0,0,0,0],
-            [0,0,0,0,0,0,0,0],
-            [0,0,0,0,0,0,0,0],
-            [0,0,0,0,0,0,0,0],
-            [0,0,0,0,0,0,0,0],
-            [0,0,0,0,0,0,0,0],
-            [0,0,0,0,0,0,0,0]
-        ];
+        // 对应C++ keypad_matrix: Uint8Array，每行一个字节，直接位运算
+        this.keypadmatrix = new Uint8Array(8); // REPLACED_MARKER
         this.lcdoffshift0flag = 0;
         this.lcdbuffaddr = null;
         this.timer0started = false;
@@ -382,16 +374,17 @@ var Wqx = (function (){
     };
 
     // 对应C++ SetKey：处理按键的睡眠/唤醒逻辑
-    // keyId: wqx内部键码（0x00~0x3F），downOrUp: true=按下 false=抬起
     Wqx.prototype.setKey = function (keyId, downOrUp){
         var row = keyId & 0x07;
         var col = keyId >> 3;
+        var bits = (keyId === 0x0F) ? 0xFE : (1 << col);
         var wakeUpKeyMap = {
             0x08: 0x00, 0x09: 0x0A, 0x0A: 0x08, 0x0B: 0x06,
             0x0C: 0x04, 0x0D: 0x02, 0x0E: 0x0C, 0x0F: 0x00
         };
 
         if (downOrUp) {
+            this.keypadmatrix[row] |= bits;
             if (this.slept) {
                 if (keyId >= 0x08 && keyId <= 0x0F && keyId !== 0x0E) {
                     this.wakeUpKey = wakeUpKeyMap[keyId];
@@ -404,17 +397,8 @@ var Wqx = (function (){
                     this.slept = true;
                 }
             }
-        }
-
-        // 电源键(0x0F)：bits=0xFE，对应C++ SetKey里的特殊处理
-        // 普通键：bits=1<<col，只设该列
-        if (keyId === 0x0F) {
-            // 0xFE = 11111110，设置row7除bit0外所有位
-            for (var i = 1; i < 8; i++) {
-                this.keypadmatrix[row][i] = downOrUp ? 1 : 0;
-            }
         } else {
-            this.keypadmatrix[row][col] = downOrUp ? 1 : 0;
+            this.keypadmatrix[row] &= ~bits;
         }
     };
 
@@ -450,14 +434,14 @@ var Wqx = (function (){
 
     Wqx.prototype.write09Port1 = function (value){
         switch (value){
-        case 0x01: this.ram[io08_port0_data] = buildByte(this.keypadmatrix[0]); break;
-        case 0x02: this.ram[io08_port0_data] = buildByte(this.keypadmatrix[1]); break;
-        case 0x04: this.ram[io08_port0_data] = buildByte(this.keypadmatrix[2]); break;
-        case 0x08: this.ram[io08_port0_data] = buildByte(this.keypadmatrix[3]); break;
-        case 0x10: this.ram[io08_port0_data] = buildByte(this.keypadmatrix[4]); break;
-        case 0x20: this.ram[io08_port0_data] = buildByte(this.keypadmatrix[5]); break;
-        case 0x40: this.ram[io08_port0_data] = buildByte(this.keypadmatrix[6]); break;
-        case 0x80: this.ram[io08_port0_data] = buildByte(this.keypadmatrix[7]); break;
+        case 0x01: this.ram[io08_port0_data] = this.keypadmatrix[0]; break;
+        case 0x02: this.ram[io08_port0_data] = this.keypadmatrix[1]; break;
+        case 0x04: this.ram[io08_port0_data] = this.keypadmatrix[2]; break;
+        case 0x08: this.ram[io08_port0_data] = this.keypadmatrix[3]; break;
+        case 0x10: this.ram[io08_port0_data] = this.keypadmatrix[4]; break;
+        case 0x20: this.ram[io08_port0_data] = this.keypadmatrix[5]; break;
+        case 0x40: this.ram[io08_port0_data] = this.keypadmatrix[6]; break;
+        case 0x80: this.ram[io08_port0_data] = this.keypadmatrix[7]; break;
         case 0:
             this.ram[io0B_port3_data] |= 1;
             if (this.keypadmatrix[7] === 0xFE) {
@@ -467,14 +451,14 @@ var Wqx = (function (){
         case 0x7F:
             if (this.ram[io15_port1_dir] === 0x7F) {
                 this.ram[io08_port0_data] = (
-                    buildByte(this.keypadmatrix[0]) |
-                    buildByte(this.keypadmatrix[1]) |
-                    buildByte(this.keypadmatrix[2]) |
-                    buildByte(this.keypadmatrix[3]) |
-                    buildByte(this.keypadmatrix[4]) |
-                    buildByte(this.keypadmatrix[5]) |
-                    buildByte(this.keypadmatrix[6]) |
-                    buildByte(this.keypadmatrix[7])
+                    this.keypadmatrix[0] |
+                    this.keypadmatrix[1] |
+                    this.keypadmatrix[2] |
+                    this.keypadmatrix[3] |
+                    this.keypadmatrix[4] |
+                    this.keypadmatrix[5] |
+                    this.keypadmatrix[6] |
+                    this.keypadmatrix[7]
                     );
                 break;
             }
