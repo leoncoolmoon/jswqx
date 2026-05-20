@@ -393,7 +393,6 @@ var Wqx = (function (){
 
         if (downOrUp) {
             if (this.slept) {
-                // 休眠中：0x08~0x0F（除0x0E）可唤醒
                 if (keyId >= 0x08 && keyId <= 0x0F && keyId !== 0x0E) {
                     this.wakeUpKey = wakeUpKeyMap[keyId];
                     this.shouldWakeUp = true;
@@ -401,14 +400,22 @@ var Wqx = (function (){
                     this.slept = false;
                 }
             } else {
-                // 工作中：0x0F进入休眠
                 if (keyId === 0x0F) {
                     this.slept = true;
                 }
             }
         }
 
-        this.keypadmatrix[row][col] = downOrUp ? 1 : 0;
+        // 电源键(0x0F)：bits=0xFE，对应C++ SetKey里的特殊处理
+        // 普通键：bits=1<<col，只设该列
+        if (keyId === 0x0F) {
+            // 0xFE = 11111110，设置row7除bit0外所有位
+            for (var i = 1; i < 8; i++) {
+                this.keypadmatrix[row][i] = downOrUp ? 1 : 0;
+            }
+        } else {
+            this.keypadmatrix[row][col] = downOrUp ? 1 : 0;
+        }
     };
 
     Wqx.prototype.setLcdStartAddr = function (addr){
@@ -951,6 +958,7 @@ var Wqx = (function (){
             this.totalInsts++;
         }
 
+        document.title = String(this.frameCounter);
         this.frameCounter++;
     };
 
