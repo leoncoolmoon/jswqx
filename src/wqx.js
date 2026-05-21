@@ -787,7 +787,25 @@ var Wqx = (function (){
             byteOffset += 0x8000;
         }
     };
+    function uint8ArrayToBase64(bytes) {
+        var binary = '';
+        var len = bytes.byteLength;
+        var chunk = 8192;
+        for (var i = 0; i < len; i += chunk) {
+            binary += String.fromCharCode.apply(null, bytes.subarray(i, i + chunk));
+        }
+        return btoa(binary);
+    }
 
+    function base64ToUint8Array(base64) {
+        var binaryString = atob(base64);
+        var len = binaryString.length;
+        var bytes = new Uint8Array(len);
+        for (var i = 0; i < len; i++) {
+            bytes[i] = binaryString.charCodeAt(i);
+        }
+        return bytes;
+    }
     Wqx.prototype.updateLCD = function (addr, value){
         var offset = addr - this.lcdbuffaddr;
         var oldValue = this.ram[addr];
