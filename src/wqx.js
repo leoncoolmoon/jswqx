@@ -858,11 +858,9 @@ var Wqx = (function (){
     }
     Wqx.prototype.syncCalendar = function (){
         var now = new Date();
-        this.clockRecords[3] = now.getDate();
-        this.clockRecords[4] = 0;
-        this.ram[0x472] = now.getFullYear() - 1881; // 年份偏移
+        this.ram[0x472] = now.getFullYear() - 1881; // 年份偏移1881
         this.ram[0x473] = now.getMonth();           // 月份0-based
-        this.clockRecords[14] = now.getDay();
+        this.ram[0x474] = now.getDate();  
         this.reset();
     };
 
