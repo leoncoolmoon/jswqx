@@ -426,64 +426,64 @@
 <body onselectstart="return false">
     <div id="debug-log" style="position:fixed; top:10px; left:10px; z-index:1000; background:rgba(0,0,0,0.8); color:#0f0; font-family:monospace; font-size:10px; max-height:200px; overflow-y:auto; pointer-events:none; padding:5px; border-radius:5px; display:none;"></div>
 
-    <button id="settings-toggle" onclick="toggleDrawer()" title="Settings">
+    <button id="settings-toggle" onclick="toggleDrawer()" data-i18n-title="settings" title="Settings">
         <svg viewBox="0 0 24 24"><path d="M19.14,12.94c0.04-0.3,0.06-0.61,0.06-0.94c0-0.32-0.02-0.64-0.07-0.94l2.03-1.58c0.18-0.14,0.23-0.41,0.12-0.61 l-1.92-3.32c-0.12-0.22-0.37-0.29-0.59-0.22l-2.39,0.96c-0.5-0.38-1.03-0.7-1.62-0.94L14.4,2.81c-0.04-0.24-0.24-0.41-0.48-0.41 h-3.84c-0.24,0-0.43,0.17-0.47,0.41L9.25,5.35C8.66,5.59,8.12,5.91,7.62,6.29L5.23,5.33c-0.22-0.08-0.47,0-0.59,0.22L2.71,8.87 c-0.11,0.2-0.06,0.47,0.12,0.61l2.03,1.58C4.81,11.36,4.79,11.68,4.79,12c0,0.32,0.02,0.64,0.06,0.94l-2.03,1.58 c-0.18,0.14-0.23,0.41-0.12,0.61l1.92,3.32c0.12,0.22,0.37,0.29,0.59,0.22l2.39-0.96c0.5,0.38,1.03,0.7,1.62,0.94l0.36,2.54 c0.05,0.24,0.24,0.41,0.48,0.41h3.84c0.24,0,0.44-0.17,0.47-0.41l0.36-2.54c0.59-0.24,1.13-0.56,1.62-0.94l2.39,0.96 c0.22,0.08,0.47,0,0.59-0.22l1.92-3.32c0.11-0.2,0.06-0.47-0.12-0.61L19.14,12.94z M12,15.5c-1.93,0-3.5-1.57-3.5-3.5 s1.57-3.5,3.5-3.5s3.5,1.57,3.5,3.5S13.93,15.5,12,15.5z"/></svg>
     </button>
 
     <div id="overlay" onclick="toggleDrawer()"></div>
     <div id="drawer">
         <div class="drawer-header">
-            <h2 style="margin:0; font-size: 18px;">Settings</h2>
+            <h2 style="margin:0; font-size: 18px;" data-i18n="settings">Settings</h2>
             <button class="close-btn" onclick="toggleDrawer()">&times;</button>
         </div>
         <div class="drawer-section">
-            <h3>Emulator Controls</h3>
+            <h3 data-i18n="emulator_controls">Emulator Controls</h3>
             <div class="controls-grid">
-                <button id="run" onclick="run();" disabled>Run</button>
-                <button id="stop" onclick="stop();" disabled>Stop</button>
-                <button id="reset" class="full-width" title="Click: Reset CPU&#10;Hold 2s: Clear save">Reset Device</button>
-                <div id="flash_status" class="full-width" style="margin:0; padding:0; border:none; font-size:12px;">Initializing...</div>
+                <button id="run" onclick="run();" data-i18n="run" disabled>Run</button>
+                <button id="stop" onclick="stop();" data-i18n="stop" disabled>Stop</button>
+                <button id="reset" class="full-width" data-i18n="reset_device" data-i18n-title="reset_title" title="Click: Reset CPU&#10;Hold 2s: Clear save">Reset Device</button>
+                <div id="flash_status" class="full-width" data-i18n="flash_initializing" style="margin:0; padding:0; border:none; font-size:12px;">Initializing...</div>
             </div>
         </div>
 
         <div class="drawer-section">
-            <h3>Display Settings</h3>
+            <h3 data-i18n="display_settings">Display Settings</h3>
             <div class="theme-switcher">
-                <button class="theme-btn" id="theme-system" onclick="changeTheme('system')" title="Follow System">💻</button>
-                <button class="theme-btn" id="theme-light" onclick="changeTheme('light')" title="Light Mode">☀️</button>
-                <button class="theme-btn" id="theme-dark" onclick="changeTheme('dark')" title="Dark Mode">🌙</button>
+                <button class="theme-btn" id="theme-system" onclick="changeTheme('system')" data-i18n-title="theme_system" title="Follow System">💻</button>
+                <button class="theme-btn" id="theme-light" onclick="changeTheme('light')" data-i18n-title="theme_light" title="Light Mode">☀️</button>
+                <button class="theme-btn" id="theme-dark" onclick="changeTheme('dark')" data-i18n-title="theme_dark" title="Dark Mode">🌙</button>
             </div>
-            <button id="fullscreen-btn" onclick="toggleFullscreen()">Toggle Fullscreen</button>
-            <button id="install-btn" style="display: none; background-color: var(--primary-color); margin-top: 8px;" onclick="installPWA()">Install App</button>
-            <button id="clear-cache-btn" style="margin-top: 8px;" onclick="clearAppCache()">清除应用缓存</button>
+            <button id="fullscreen-btn" onclick="toggleFullscreen()" data-i18n="toggle_fullscreen">Toggle Fullscreen</button>
+            <button id="install-btn" style="display: none; background-color: var(--primary-color); margin-top: 8px;" onclick="installPWA()" data-i18n="install_app">Install App</button>
+            <button id="clear-cache-btn" style="margin-top: 8px;" onclick="clearAppCache()" data-i18n="clear_cache">Clear App Cache</button>
         </div>
 
         <div class="drawer-section">
-            <h3>Keyboard Shortcuts</h3>
+            <h3 data-i18n="keyboard_shortcuts">Keyboard Shortcuts</h3>
             <div style="display: grid; grid-template-columns: 1fr; gap: 8px; font-size: 13px; color: var(--secondary-text);">
-                <div>F1-F12: <span style="opacity: 0.8">Function Keys</span></div>
-                <div>Enter: <span style="opacity: 0.8">Confirm / OK</span></div>
-                <div>Esc / Ctrl: <span style="opacity: 0.8">Back / Exit</span></div>
-                <div>Arrows: <span style="opacity: 0.8">Navigation</span></div>
-                <div>A-Z: <span style="opacity: 0.8">Alpha Input</span></div>
-                <div>1-9: <span style="opacity: 0.8">Numeric Keys</span></div>
-                <div>Backspace: <span style="opacity: 0.8">F2 Key</span></div>
-                <div>Tab: <span style="opacity: 0.8">Help</span></div>
-                <div>Shift: <span style="opacity: 0.8">Shift Modifier</span></div>
-                <div>Space: <span style="opacity: 0.8">Equals (=)</span></div>
+                <div>F1-F12: <span style="opacity: 0.8" data-i18n="shortcut_f1_f12">Function Keys</span></div>
+                <div>Enter: <span style="opacity: 0.8" data-i18n="shortcut_enter">Confirm / OK</span></div>
+                <div>Esc / Ctrl: <span style="opacity: 0.8" data-i18n="shortcut_esc_ctrl">Back / Exit</span></div>
+                <div>Arrows: <span style="opacity: 0.8" data-i18n="shortcut_arrows">Navigation</span></div>
+                <div>A-Z: <span style="opacity: 0.8" data-i18n="shortcut_az">Alpha Input</span></div>
+                <div>1-9: <span style="opacity: 0.8" data-i18n="shortcut_19">Numeric Keys</span></div>
+                <div>Backspace: <span style="opacity: 0.8" data-i18n="shortcut_backspace">F2 Key</span></div>
+                <div>Tab: <span style="opacity: 0.8" data-i18n="shortcut_tab">Help</span></div>
+                <div>Shift: <span style="opacity: 0.8" data-i18n="shortcut_shift">Shift Modifier</span></div>
+                <div>Space: <span style="opacity: 0.8" data-i18n="shortcut_space">Equals (=)</span></div>
             </div>
         </div>
 
         <p style="margin-top:auto; font-size: 11px; text-align: center; opacity: 0.5; color: var(--secondary-text);">
-            Fully opensource@<a href="https://github.com/leoncoolmoon/jswqx">github</a><br>
+            <span data-i18n="footer_opensource">Fully opensource@</span><a href="https://github.com/leoncoolmoon/jswqx">github</a><br>
             NC1020 Emulator v2.0 <br>
-            Persistent Storage Enabled <br>
-            支持 PWA 离线使用 <br>
-            <a href="rom.zip">ROM文件下载地址</a> <br>
+            <span data-i18n="footer_storage">Persistent Storage Enabled</span> <br>
+            <span data-i18n="footer_pwa">PWA Offline Support</span> <br>
+            <a href="rom.zip" data-i18n="footer_rom">ROM Download Link</a> <br>
         </p>
     </div>
 
-    <h1>文曲星模拟器</h1>
+    <h1 data-i18n="h1">WQX Emulator</h1>
 
     <div id="device-container">
         <div id="device">
@@ -500,7 +500,137 @@
 
 
     <script>
-        
+        // ============================================================
+        // Internationalization (i18n) Logic
+        // ============================================================
+        const i18n = {
+            en: {
+                title: "WQX Emulator - NC1020",
+                h1: "WQX Emulator",
+                settings: "Settings",
+                emulator_controls: "Emulator Controls",
+                run: "Run",
+                stop: "Stop",
+                reset_device: "Reset Device",
+                reset_title: "Click: Reset CPU\nHold 2s: Clear save",
+                display_settings: "Display Settings",
+                theme_system: "Follow System",
+                theme_light: "Light Mode",
+                theme_dark: "Dark Mode",
+                toggle_fullscreen: "Toggle Fullscreen",
+                install_app: "Install App",
+                clear_cache: "Clear App Cache",
+                keyboard_shortcuts: "Keyboard Shortcuts",
+                shortcut_f1_f12: "Function Keys",
+                shortcut_enter: "Confirm / OK",
+                shortcut_esc_ctrl: "Back / Exit",
+                shortcut_arrows: "Navigation",
+                shortcut_az: "Alpha Input",
+                shortcut_19: "Numeric Keys",
+                shortcut_backspace: "F2 Key",
+                shortcut_tab: "Help",
+                shortcut_shift: "Shift Modifier",
+                shortcut_space: "Equals (=)",
+                footer_opensource: "Fully opensource@",
+                footer_storage: "Persistent Storage Enabled",
+                footer_pwa: "PWA Offline Support",
+                footer_rom: "ROM Download Link",
+                flash_initializing: "Initializing...",
+                flash_saved: "💾 Auto-saved",
+                flash_full: "⚠️ Storage full",
+                flash_restored: "✅ Restored",
+                flash_cleared: "🗑️ Cleared",
+                flash_loading_rom: "Loading rom.zip...",
+                flash_mounting_bfs: "rom.zip loaded, mounting BFS...",
+                flash_network_error: "❌ Network Error",
+                flash_fs_error: "❌ FS Error: ",
+                flash_missing_obj: "❌ Missing obj_lu.bin",
+                flash_missing_fls: "❌ Missing nc1020.fls",
+                flash_loaded: "💾 Loaded ",
+                clear_cache_confirm: "Are you sure you want to clear the app cache and reload? This may help resolve certain display or performance issues.",
+                clear_cache_failed: "Clear cache failed: "
+            },
+            zh: {
+                title: "文曲星模拟器 - NC1020",
+                h1: "文曲星模拟器",
+                settings: "设置",
+                emulator_controls: "模拟器控制",
+                run: "运行",
+                stop: "停止",
+                reset_device: "重置设备",
+                reset_title: "点击: 重置 CPU\n按住 2s: 清除存档",
+                display_settings: "显示设置",
+                theme_system: "跟随系统",
+                theme_light: "浅色模式",
+                theme_dark: "深色模式",
+                toggle_fullscreen: "切换全屏",
+                install_app: "安装应用",
+                clear_cache: "清除应用缓存",
+                keyboard_shortcuts: "键盘快捷键",
+                shortcut_f1_f12: "功能键",
+                shortcut_enter: "确认 / 确定",
+                shortcut_esc_ctrl: "返回 / 退出",
+                shortcut_arrows: "方向键",
+                shortcut_az: "字母输入",
+                shortcut_19: "数字键",
+                shortcut_backspace: "F2 键",
+                shortcut_tab: "帮助",
+                shortcut_shift: "Shift 组合键",
+                shortcut_space: "等号 (=)",
+                footer_opensource: "完全开源@",
+                footer_storage: "已启用持久化存储",
+                footer_pwa: "支持 PWA 离线使用",
+                footer_rom: "ROM文件下载地址",
+                flash_initializing: "正在初始化...",
+                flash_saved: "💾 已自动保存",
+                flash_full: "⚠️ 存储空间已满",
+                flash_restored: "✅ 已恢复",
+                flash_cleared: "🗑️ 已清除",
+                flash_loading_rom: "正在加载 rom.zip...",
+                flash_mounting_bfs: "rom.zip 已加载，正在挂载 BFS...",
+                flash_network_error: "❌ 网络错误",
+                flash_fs_error: "❌ 文件系统错误: ",
+                flash_missing_obj: "❌ 缺少 obj_lu.bin",
+                flash_missing_fls: "❌ 缺少 nc1020.fls",
+                flash_loaded: "💾 已加载 ",
+                clear_cache_confirm: "确定要清除应用缓存并重新加载吗？这可能有助于解决某些显示或运行问题。",
+                clear_cache_failed: "清除缓存失败: "
+            }
+        };
+
+        let currentLang = 'en';
+
+        function getI18n(key) {
+            return i18n[currentLang][key] || key;
+        }
+
+        function applyLanguage() {
+            document.querySelectorAll('[data-i18n]').forEach(el => {
+                const key = el.getAttribute('data-i18n');
+                const translation = getI18n(key);
+                if (el.tagName === 'INPUT' && (el.type === 'button' || el.type === 'submit')) {
+                    el.value = translation;
+                } else {
+                    el.textContent = translation;
+                }
+            });
+            document.querySelectorAll('[data-i18n-title]').forEach(el => {
+                const key = el.getAttribute('data-i18n-title');
+                el.title = getI18n(key);
+            });
+            document.title = getI18n('title');
+        }
+
+        function initLanguage() {
+            const browserLang = navigator.language || navigator.userLanguage;
+            if (browserLang.startsWith('zh')) {
+                currentLang = 'zh';
+            } else {
+                currentLang = 'en';
+            }
+            applyLanguage();
+        }
+
         // ============================================================
         // UI Drawer & Theme Logic
         // ============================================================
@@ -562,10 +692,10 @@
                     parts.push(btoa(binary));
                 }
                 localStorage.setItem(FLASH_STORAGE_KEY, JSON.stringify(parts));
-                setFlashStatus('💾 Auto-saved');
+                setFlashStatus(getI18n('flash_saved'));
                 return true;
             } catch (e) {
-                setFlashStatus('⚠️ Storage full');
+                setFlashStatus(getI18n('flash_full'));
                 return false;
             }
         }
@@ -582,7 +712,7 @@
                         wqxInstance.nor[offset++] = binary.charCodeAt(j);
                     }
                 }
-                setFlashStatus('✅ Restored');
+                setFlashStatus(getI18n('flash_restored'));
                 return true;
             } catch (e) {
                 return false;
@@ -591,7 +721,7 @@
 
         function clearSavedFlash() {
             localStorage.removeItem(FLASH_STORAGE_KEY);
-            setFlashStatus('🗑️ Cleared');
+            setFlashStatus(getI18n('flash_cleared'));
             setTimeout(() => location.reload(), 500);
         }
 
@@ -982,20 +1112,20 @@ console.log('绑定到document，试试拖放');
         }
 
         function loadZip() {
-            log('Loading rom.zip...');
+            log(getI18n('flash_loading_rom'));
             var xhrZip = new XMLHttpRequest();
             xhrZip.open('GET', 'rom.zip', true);
             xhrZip.responseType = 'arraybuffer';
             xhrZip.onload = function () {
                 if (xhrZip.status === 200) {
-                    log('rom.zip loaded, mounting BFS...');
+                    log(getI18n('flash_mounting_bfs'));
                     mountBFS(xhrZip.response);
                 } else {
                     setFlashStatus('❌ ROM Load Error: ' + xhrZip.status);
                 }
             };
             xhrZip.onerror = function() {
-                setFlashStatus('❌ Network Error');
+                setFlashStatus(getI18n('flash_network_error'));
             };
             xhrZip.send();
         }
@@ -1008,14 +1138,14 @@ console.log('绑定到document，试试拖放');
                     options: { zipData: Buffer.from(zipData) }
                 }, function (e) {
                     if (e) {
-                        setFlashStatus('❌ FS Error: ' + e);
+                        setFlashStatus(getI18n('flash_fs_error') + e);
                         return;
                     }
                     log('BFS configured, reading files...');
                     var fs = BrowserFS.BFSRequire('fs');
                     fs.readFile('/obj_lu.bin', function (err, data) {
                         if (err) {
-                            setFlashStatus('❌ Missing obj_lu.bin');
+                            setFlashStatus(getI18n('flash_missing_obj'));
                             return;
                         }
                         log('obj_lu.bin loaded');
@@ -1028,7 +1158,7 @@ console.log('绑定到document，试试拖放');
                             log('No saved flash, reading nc1020.fls...');
                             fs.readFile('/nc1020.fls', function (err, data) {
                                 if (err) {
-                                    setFlashStatus('❌ Missing nc1020.fls');
+                                    setFlashStatus(getI18n('flash_missing_fls'));
                                     return;
                                 }
                                 log('nc1020.fls loaded');
@@ -1059,6 +1189,7 @@ console.log('绑定到document，试试拖放');
         }
 
         window.addEventListener('load', function() {
+            initLanguage();
             log('App started, initializing...');
             try { 
                 loadZip(); 
@@ -1105,7 +1236,7 @@ console.log('绑定到document，试试拖放');
         }
 
         async function clearAppCache() {
-            if (confirm('确定要清除应用缓存并重新加载吗？这可能有助于解决某些显示或运行问题。')) {
+            if (confirm(getI18n('clear_cache_confirm'))) {
                 try {
                     // Unregister service workers
                     if ('serviceWorker' in navigator) {
@@ -1125,7 +1256,7 @@ console.log('绑定到document，试试拖放');
                     window.location.reload(true);
                 } catch (err) {
                     console.error('Clear cache failed:', err);
-                    alert('清除缓存失败: ' + err.message);
+                    alert(getI18n('clear_cache_failed') + err.message);
                 }
             }
         }
