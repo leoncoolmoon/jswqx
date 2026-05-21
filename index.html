@@ -965,6 +965,8 @@ function check() {
             }, 2000);
         } else {
             wqx.run(); // 全新启动，resetCpu+syncCalendar+syncClock
+                    // 确保即便全新启动也同步日历
+                    wqx.syncCalendar();
         }
         document.getElementById('run').disabled = true;
         document.getElementById('stop').disabled = false;
@@ -1067,6 +1069,17 @@ function check() {
             //     _stateRestored = true;
             //     check();
             // }
+
+            // Auto-save state when page is hidden or closed
+            window.addEventListener('pagehide', () => {
+                if (wqx) saveAppState(wqx);
+            });
+
+            document.addEventListener('visibilitychange', () => {
+                if (document.visibilityState === 'hidden') {
+                    if (wqx) saveAppState(wqx);
+                }
+            });
 
             if ('serviceWorker' in navigator) {
                 navigator.serviceWorker.register('./sw.js').then(function(registration) {
