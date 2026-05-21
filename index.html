@@ -955,20 +955,20 @@ console.log('可以试试拖放fls文件来更新固件');
 function check() {
     if (romLoaded && norLoaded) {
         if (_stateRestored) {
-            // 从存档恢复：不reset，直接同步时间后继续运行
-            wqx.syncClock();
+            // 从存档恢复：不reset，先同步日期
+            wqx.syncCalendar();
             wqx.startFrame(); // 只启动定时器，不resetCpu
+            // 延时同步时钟，避免干扰启动逻辑
+            setTimeout(() => {
+                wqx.syncClock();
+                log('Delayed clock sync completed');
+            }, 2000);
         } else {
-            wqx.run(); // 全新启动，resetCpu+syncClock
+            wqx.run(); // 全新启动，resetCpu+syncCalendar+syncClock
         }
         document.getElementById('run').disabled = true;
         document.getElementById('stop').disabled = false;
     }
-}
-if (loadAppState(wqx)) {
-    norLoaded = true;
-    _stateRestored = true;
-    check();
 }
 
         function loadZip() {
@@ -1011,8 +1011,12 @@ if (loadAppState(wqx)) {
                         log('obj_lu.bin loaded');
                         wqx.loadBROM(data);
                         romLoaded = true;
+
+                        // 先判断是否有存档
                         if (loadAppState(wqx)) {
+                            log('State restored from storage');
                             norLoaded = true;
+                            _stateRestored = true;
                             check();
                         } else {
                             log('No saved state, reading nc1020.fls...');
@@ -1024,6 +1028,7 @@ if (loadAppState(wqx)) {
                                 log('nc1020.fls loaded');
                                 wqx.loadNorFlash(data);
                                 norLoaded = true;
+                                _stateRestored = false;
                                 check();
                             });
                         }
@@ -1056,11 +1061,41 @@ if (loadAppState(wqx)) {
                 log('Fatal initialization error: ' + e, '#f00'); 
             }
 
+            // 移除页面底部的冗余 loadAppState 调用，统一在 mountBFS 中处理
+            // if (loadAppState(wqx)) {
+            //     norLoaded = true;
+            //     _stateRestored = true;
+            //     check();
+            // }
+
             if ('serviceWorker' in navigator) {
                 navigator.serviceWorker.register('./sw.js').then(function(registration) {
                     log('ServiceWorker registration successful with scope: ' + registration.scope);
+
+                    registration.onupdatefound = function() {
+                        var installingWorker = registration.installing;
+                        installingWorker.onstatechange = function() {
+                            if (installingWorker.state === 'installed') {
+                                if (navigator.serviceWorker.controller) {
+                                    log('New content is available; please refresh.');
+                                    if (confirm('新版本已就绪，是否立即刷新以同步服务器版本？')) {
+                                        window.location.reload();
+                                    }
+                                } else {
+                                    log('Content is cached for offline use.');
+                                }
+                            }
+                        };
+                    };
                 }, function(err) {
                     log('ServiceWorker registration failed: ' + err, '#f00');
+                });
+
+                var refreshing;
+                navigator.serviceWorker.addEventListener('controllerchange', function() {
+                    if (refreshing) return;
+                    window.location.reload();
+                    refreshing = true;
                 });
             }
         });
