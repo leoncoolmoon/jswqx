@@ -455,6 +455,7 @@
             </div>
             <button id="fullscreen-btn" onclick="toggleFullscreen()">Toggle Fullscreen</button>
             <button id="install-btn" style="display: none; background-color: var(--primary-color); margin-top: 8px;" onclick="installPWA()">Install App</button>
+            <button id="clear-cache-btn" style="margin-top: 8px;" onclick="clearAppCache()">清除应用缓存</button>
         </div>
 
         <div class="drawer-section">
@@ -1101,6 +1102,32 @@ console.log('绑定到document，试试拖放');
             deferredPrompt = null;
             // Hide the install button
             if (installBtn) installBtn.style.display = 'none';
+        }
+
+        async function clearAppCache() {
+            if (confirm('确定要清除应用缓存并重新加载吗？这可能有助于解决某些显示或运行问题。')) {
+                try {
+                    // Unregister service workers
+                    if ('serviceWorker' in navigator) {
+                        const registrations = await navigator.serviceWorker.getRegistrations();
+                        for (const registration of registrations) {
+                            await registration.unregister();
+                        }
+                    }
+                    // Delete caches
+                    if ('caches' in window) {
+                        const cacheNames = await caches.keys();
+                        for (const cacheName of cacheNames) {
+                            await caches.delete(cacheName);
+                        }
+                    }
+                    // Reload
+                    window.location.reload(true);
+                } catch (err) {
+                    console.error('Clear cache failed:', err);
+                    alert('清除缓存失败: ' + err.message);
+                }
+            }
         }
 
         window.addEventListener('appinstalled', (event) => {
