@@ -738,7 +738,8 @@ var Wqx = (function (){
         this.cpu.io_write_map = this.io_write_map;
         this.cpu.io_read = this.io_read;
         this.cpu.io_write = this.io_write;
-        // RAM已就绪，在固件从复位向量启动前同步时间
+        // RAM已就绪，在固件从复位向量启动前同步日期和时间
+        this.syncCalendar();
         this.syncClock();
         this.cpu.cycles = 0;
         this.cpu.reg_a = 0;
@@ -771,7 +772,6 @@ var Wqx = (function (){
             memcpy(bufferDest2, bufferSrc2, 0x4000);
             byteOffset += 0x8000;
         }
-        this.resetCpu();
     };
 
     Wqx.prototype.loadNorFlash = function (buffer){
@@ -786,7 +786,6 @@ var Wqx = (function (){
             memcpy(bufferDest2, bufferSrc2, 0x4000);
             byteOffset += 0x8000;
         }
-        this.resetCpu();
     };
 
     Wqx.prototype.updateLCD = function (addr, value){
@@ -1030,18 +1029,24 @@ Wqx.prototype.refreshLCD = function (){
 };
 
 
-    // 时间同步：保留 clockRecords[2] 高2位标志位
+    // 时间同步：仅同步 时、分、秒，保留 clockRecords[2] 高2位标志位
     Wqx.prototype.syncClock = function (){
         _trace('syncClock');
         var now = new Date();
-        // 时分秒
         this.clockRecords[0] = now.getSeconds();
         this.clockRecords[1] = now.getMinutes();
         this.clockRecords[2] = (this.clockRecords[2] & 0xC0) | (now.getHours() & 0x3F);
-        // 年月日：直接写RAM，不经clockRecords[3]累加，避免重复reset导致日期叠加
+    };
+
+    // 日期同步：同步 年、月、日、星期
+    Wqx.prototype.syncCalendar = function (){
+        _trace('syncCalendar');
+        var now = new Date();
+
+        // 兼容某些固件使用的 RAM 备份
         this.ram[0x472] = now.getFullYear() - 1881; // 年份偏移1881
         this.ram[0x473] = now.getMonth();           // 月份0-based
-        this.ram[0x474] = now.getDate() - 1;            // 日
+        this.ram[0x474] = now.getDate() - 1;        // 日
     };
 
     // 从存档恢复后调用：只启动帧定时器，不resetCpu，保留已恢复的CPU状态
