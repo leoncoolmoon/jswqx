@@ -1156,7 +1156,7 @@ Wqx.prototype.refreshLCD = function (){
             this.totalInsts++;
         }
 
-        document.title = String(this.frameCounter);
+        //document.title = String(this.frameCounter);
         this.frameCounter++;
     };
 
