@@ -857,6 +857,7 @@ var Wqx = (function (){
         this.clockRecords[2] = (this.clockRecords[2] & 0xC0) | (now.getHours() & 0x3F);
     }
     Wqx.prototype.syncCalendar = function (){
+        var now = new Date();
         this.clockRecords[3] = now.getDate();
         this.clockRecords[4] = 0;
         this.ram[0x472] = now.getFullYear() - 1881; // 年份偏移
