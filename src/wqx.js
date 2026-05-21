@@ -1042,10 +1042,6 @@ Wqx.prototype.refreshLCD = function (){
     Wqx.prototype.syncCalendar = function (){
         _trace('syncCalendar');
         var now = new Date();
-        this.clockRecords[3] = now.getDate();
-        this.clockRecords[8] = now.getMonth() + 1;
-        this.clockRecords[9] = now.getFullYear() % 100;
-        this.clockRecords[14] = now.getDay();
 
         // 兼容某些固件使用的 RAM 备份
         this.ram[0x472] = now.getFullYear() - 1881; // 年份偏移1881
