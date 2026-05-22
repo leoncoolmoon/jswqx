@@ -1,4 +1,4 @@
-const CACHE_NAME = 'wqx-nc1020-v2';
+const CACHE_NAME = 'wqx-nc1020-v3';
 const ASSETS = [
   './',
   './index.html',
