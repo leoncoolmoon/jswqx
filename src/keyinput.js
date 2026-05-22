@@ -49,7 +49,7 @@ var WqxKeyInput = function (){
         38: 'Up',
         34: 'PageDown',
         9: 'Tab',
-	16: 'Shift',
+		16: 'Shift',
         229: 'Shift',
         20: 'CapsLock',
         27: 'Esc',
@@ -100,8 +100,7 @@ var WqxKeyInput = function (){
         'N': 0x35, // 46 N
         'M': 0x36, // 46 M
         'PageUp': 0x37, // 47 PgUp
-
-        'A': 0x28, // 30 A
+		'PgUp': 0x37, // 47 PgUp        'A': 0x28, // 30 A
         'S': 0x29, // 31 S
         'D': 0x2A, // 32 D
         'F': 0x2B, // 33 F
@@ -126,6 +125,7 @@ var WqxKeyInput = function (){
         'P': 0x1C, // 29 P
         'Enter': 0x1D, // 39 Enter
         'PageDown': 0x1E, // 49 PgDown
+		'PgDn': 0x1E, // 49 PgDown
         'Right': 0x1F, // 59 `->`
 
         'F1': 0x10, // 12 F1
