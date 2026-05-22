@@ -944,7 +944,7 @@ document.addEventListener('drop', function(e){
     var reader = new FileReader();
     reader.onload = function(ev){
         wqx.loadNorFlash(ev.target.result);
-        saveFlashToStorage(wqx);
+        saveAppState(wqx);
         setFlashStatus('💾 已加载 ' + file.name);
     };
     reader.readAsArrayBuffer(file);
