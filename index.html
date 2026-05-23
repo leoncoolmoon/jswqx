@@ -423,7 +423,7 @@
 
         <p style="margin-top:auto; font-size: 11px; text-align: center; opacity: 0.5; color: var(--secondary-text);">
             Fully opensource@<a href="https://github.com/leoncoolmoon/jswqx">github</a><br>
-            NC1020 Emulator v3.0 <br>
+            NC1020 Emulator v2.0 <br>
             Persistent Storage Enabled <br>
             支持 PWA 离线使用 <br>
             <a href="rom.zip">ROM文件下载地址</a> <br>
@@ -484,11 +484,11 @@
         // ============================================================
         var STATE_STORAGE_KEY = 'wqx_state';
 
-        // ★ 修复：保存前校验 lcdbuffaddr 合法性
+        // ★ 修复：保存前校验 lcdbuffaddr 合法性（必须 > 0x100，否则不保存）
         function isStateReadyToSave(wqxInstance) {
-            if (!wqxInstance) return false;
+            if (!wqxInstance || !wqxInstance.cpu) return false;
             var addr = wqxInstance.lcdbuffaddr;
-            if (addr === null || addr === undefined) {
+            if (addr === null || addr === undefined || addr <= 0x100) {
                 log('⚠️ lcdbuffaddr=' + addr + '，状态未就绪，跳过保存');
                 return false;
             }
@@ -515,8 +515,8 @@
                 if (!stored) return false;
                 var state = JSON.parse(stored);
                 // ★ 修复：存档里的 lcdbuffaddr 必须合法才允许恢复
-                if (!state || state.lcdbuffaddr === null || state.lcdbuffaddr === undefined || state.lcdbuffaddr <= 0x100) {
-                    log('⚠️ 存档 lcdbuffaddr 不合法（值=' + (state && state.lcdbuffaddr) + '），丢弃存档');
+                if (!state || !state.cpu || state.lcdbuffaddr === null || state.lcdbuffaddr === undefined || state.lcdbuffaddr <= 0x100) {
+                    log('⚠️ 存档无效或未就绪（lcdbuffaddr=' + (state && state.lcdbuffaddr) + '），丢弃存档');
                     localStorage.removeItem(STATE_STORAGE_KEY);
                     return false;
                 }
@@ -798,8 +798,7 @@
         // ★ 修复：monkey-patch updateLCD 时先检查 lcdbuffaddr 是否合法
         var _origUpdateLCD = wqx.updateLCD.bind(wqx);
         wqx.updateLCD = function(addr, value) {
-            _origUpdateLCD(addr, value);
-            // lcdbuffaddr 未就绪时跳过指示器逻辑，避免 NaN 计算
+            // lcdbuffaddr 未就绪时直接跳过，避免 NaN 计算
             if (!this.lcdbuffaddr || this.lcdbuffaddr <= 0x100) return;
             var offset = addr - this.lcdbuffaddr;
             if (offset < 0 || offset >= 1600) return;
@@ -811,6 +810,7 @@
                     drawIndicator(row - 64, active);
                 }
             }
+            _origUpdateLCD(addr, value);
         };
 
         // FLS 拖放更新
@@ -901,13 +901,7 @@
         }
 
         function run() {
-            if (wqx.frameTimer) return;
-            // 如果已经初始化过（romLoaded），只启动帧循环，不 resetCpu
-            if (romLoaded && norLoaded) {
-                wqx.startFrame();
-            } else {
-                wqx.run();
-            }
+            wqx.run();
             document.getElementById('run').disabled = true;
             document.getElementById('stop').disabled = false;
         }
