@@ -256,7 +256,7 @@ var Wqx = (function (){
             case 0x00: return this.read00BankSwitch();
             case 0x02: return this.read02Timer0Value();
             case 0x04: return this.read04StopTimer0();
-            case 0x05: return this.read05StartTimer0;
+            case 0x05: return this.read05StartTimer0();
             case 0x06: return this.read06StopTimer1();
             case 0x07: return this.read07StartTimer1();
             case 0x3B: return this.read3BUnknown();
@@ -287,7 +287,7 @@ var Wqx = (function (){
     Wqx.prototype.read02Timer0Value = function (){
         if (this.timer0started) {
             this.timer0value = Math.floor((this.cpu.cycles - this.timer0startcycles) /
-                SPDC1016Frequency) & 0xFF;
+                (SPDC1016Frequency / 10)) & 0xFF;
         }
         return this.timer0value;
     };
@@ -347,9 +347,10 @@ var Wqx = (function (){
             if (bank < 0x20) {
                 this.may4000ptr = this.norbankheader[bank];
             } else if (bank >= 0x80) {
-                if (this.ram[io0D_volumeid] & 0x01) {
+                var vol = this.ram[io0D_volumeid] & 0x03;
+                if (vol === 1) {
                     this.may4000ptr = this.volume1array[bank];
-                } else if (this.ram[io0D_volumeid] & 0x02) {
+                } else if (vol === 3) {
                     this.may4000ptr = this.volume2array[bank];
                 } else {
                     this.may4000ptr = this.volume0array[bank];
@@ -890,6 +891,8 @@ Wqx.prototype.saveState = function (){
         nor: uint8ArrayToBase64(this.nor),
         ramRomBank1: uint8ArrayToBase64(this.ramRomBank1),
         zp40cache: uint8ArrayToBase64(this.zp40cache),
+        clockRecords: uint8ArrayToBase64(this.clockRecords),
+        keypadmatrix: uint8ArrayToBase64(this.keypadmatrix),
         cpu: {
             reg_a: this.cpu.reg_a,
             reg_x: this.cpu.reg_x,
@@ -904,8 +907,16 @@ Wqx.prototype.saveState = function (){
             flag_b: this.cpu.flag_b,
             flag_u: this.cpu.flag_u,
             flag_v: this.cpu.flag_v,
-            flag_n: this.cpu.flag_n
+            flag_n: this.cpu.flag_n,
+            irq: this.cpu.irq,
+            nmi: this.cpu.nmi,
+            wai: this.cpu.wai,
+            stp: this.cpu.stp
         },
+        slept: this.slept,
+        shouldWakeUp: this.shouldWakeUp,
+        wakeUpPending: this.wakeUpPending,
+        wakeUpKey: this.wakeUpKey,
         timer0started: this.timer0started,
         timer0value: this.timer0value,
         timer0startcycles: this.timer0startcycles,  // ← 新增
@@ -929,6 +940,8 @@ Wqx.prototype.loadState = function (state){
         this.nor.set(base64ToUint8Array(state.nor));
         this.ramRomBank1.set(base64ToUint8Array(state.ramRomBank1));
         this.zp40cache.set(base64ToUint8Array(state.zp40cache));
+        if (state.clockRecords) this.clockRecords.set(base64ToUint8Array(state.clockRecords));
+        if (state.keypadmatrix) this.keypadmatrix.set(base64ToUint8Array(state.keypadmatrix));
         
         // 重建 NOR 视图（重要！）
         for (var i = 0; i < 32; i++) {
@@ -962,6 +975,15 @@ Wqx.prototype.loadState = function (state){
         this.cpu.flag_u = state.cpu.flag_u;
         this.cpu.flag_v = state.cpu.flag_v;
         this.cpu.flag_n = state.cpu.flag_n;
+        if (state.cpu.irq !== undefined) this.cpu.irq = state.cpu.irq;
+        if (state.cpu.nmi !== undefined) this.cpu.nmi = state.cpu.nmi;
+        if (state.cpu.wai !== undefined) this.cpu.wai = state.cpu.wai;
+        if (state.cpu.stp !== undefined) this.cpu.stp = state.cpu.stp;
+
+        if (state.slept !== undefined) this.slept = state.slept;
+        if (state.shouldWakeUp !== undefined) this.shouldWakeUp = state.shouldWakeUp;
+        if (state.wakeUpPending !== undefined) this.wakeUpPending = state.wakeUpPending;
+        if (state.wakeUpKey !== undefined) this.wakeUpKey = state.wakeUpKey;
 
         this.timer0started = state.timer0started;
         this.timer0value = state.timer0value;
@@ -997,9 +1019,10 @@ Wqx.prototype.loadState = function (state){
         if (bank < 0x20) {
             this.may4000ptr = this.norbankheader[bank];
         } else if (bank >= 0x80) {
-            if (volumeid & 0x01) {
+            var vol = volumeid & 0x03;
+            if (vol === 1) {
                 this.may4000ptr = this.volume1array[bank];
-            } else if (volumeid & 0x02) {
+            } else if (vol === 3) {
                 this.may4000ptr = this.volume2array[bank];
             } else {
                 this.may4000ptr = this.volume0array[bank];
@@ -1092,6 +1115,7 @@ Wqx.prototype.refreshLCD = function (){
 
     Wqx.prototype.reset = function (){
         _trace('reset');
+        this.ram.fill(0);
         this.resetCpu();
         this.frameCounter = 0;
         this.nmiCounter = 0;

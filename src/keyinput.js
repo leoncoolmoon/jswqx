@@ -100,7 +100,8 @@ var WqxKeyInput = function (){
         'N': 0x35, // 46 N
         'M': 0x36, // 46 M
         'PageUp': 0x37, // 47 PgUp
-		'PgUp': 0x37, // 47 PgUp        'A': 0x28, // 30 A
+        'PgUp': 0x37, // 47 PgUp
+        'A': 0x28, // 30 A
         'S': 0x29, // 31 S
         'D': 0x2A, // 32 D
         'F': 0x2B, // 33 F
