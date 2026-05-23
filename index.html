@@ -62,7 +62,6 @@
             text-shadow: 0 4px 12px rgba(0,0,0,0.3);
         }
 
-        /* Settings Toggle Button */
         #settings-toggle {
             position: fixed;
             top: 20px;
@@ -86,7 +85,6 @@
         #settings-toggle:hover { transform: scale(1.05); }
         #settings-toggle svg { width: 24px; height: 24px; fill: var(--text-color); }
 
-        /* Settings Drawer */
         #drawer {
             position: fixed;
             top: 0;
@@ -137,16 +135,9 @@
             opacity: 0;
             transition: opacity 0.3s ease;
         }
-        #overlay.show {
-            display: block;
-            opacity: 1;
-        }
+        #overlay.show { display: block; opacity: 1; }
 
-        .drawer-section {
-            display: flex;
-            flex-direction: column;
-            gap: 12px;
-        }
+        .drawer-section { display: flex; flex-direction: column; gap: 12px; }
         .drawer-section h3 {
             margin: 0;
             font-size: 14px;
@@ -156,12 +147,7 @@
             font-weight: 600;
         }
 
-        .controls-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 10px;
-        }
-
+        .controls-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
         .full-width { grid-column: span 2; }
 
         button {
@@ -175,7 +161,7 @@
             font-weight: 500;
             transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
             outline: none;
-            text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8); /* Stronger shadow for visibility */
+            text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
             backdrop-filter: blur(10px);
             -webkit-backdrop-filter: blur(10px);
         }
@@ -190,16 +176,11 @@
             transform: translateY(-1px);
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
         }
-
         button:active:not(:disabled) {
             background-color: rgba(128, 128, 128, 0.15);
             transform: translateY(0);
         }
-
-        button:disabled {
-            opacity: 0.3;
-            cursor: not-allowed;
-        }
+        button:disabled { opacity: 0.3; cursor: not-allowed; }
 
         #flash_status {
             font-size: 13px;
@@ -236,7 +217,6 @@
             transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
         }
 
-        /* The top layer: physical device frame with hole */
         #key {
             width: 434px;
             height: 543px;
@@ -250,7 +230,6 @@
             border-radius: 10px;
         }
 
-        /* The bottom layer: LCD content aligned with physical screen area */
         #outScr {
             position: absolute;
             left: 15px;
@@ -271,14 +250,11 @@
         #scr {
             width: 320px;
             height: 160px;
-            /* Align 320px LCD center with Ruler center (digit 5 at 195.5) */
-            /* (195.5 - 160) - 15 = 20.5px */
             margin-left: 20.5px;
             display: flex;
             align-items: center;
             justify-content: center;
             position: relative;
-            /* LCD pixel grid texture */
             background-image: linear-gradient(rgba(0,0,0,0.06) 1px, transparent 1px),
                               linear-gradient(90deg, rgba(0,0,0,0.06) 1px, transparent 1px);
             background-size: 2px 2px;
@@ -290,7 +266,7 @@
             width: 320px;
             height: 160px;
             image-rendering: pixelated;
-            mix-blend-mode: multiply; /* Darkens the green background */
+            mix-blend-mode: multiply;
             opacity: 0.85;
             display: block;
         }
@@ -310,25 +286,11 @@
             margin-bottom: 60px;
             box-shadow: 0 10px 30px rgba(0,0,0,0.2);
         }
+        #info strong { color: var(--text-color); }
+        #info a { color: var(--primary-color); text-decoration: none; font-weight: 500; }
+        #info a:hover { text-decoration: underline; }
 
-        #info strong {
-            color: var(--text-color);
-        }
-
-        #info a {
-            color: var(--primary-color);
-            text-decoration: none;
-            font-weight: 500;
-        }
-
-        #info a:hover {
-            text-decoration: underline;
-        }
-
-        #reset {
-            position: relative;
-            overflow: hidden;
-        }
+        #reset { position: relative; overflow: hidden; }
         #reset::after {
             content: '';
             position: absolute;
@@ -338,10 +300,7 @@
             background: var(--accent-color);
             box-shadow: 0 0 10px var(--accent-color);
         }
-        #reset.pressing::after {
-            width: 100%;
-            transition: width 2s linear;
-        }
+        #reset.pressing::after { width: 100%; transition: width 2s linear; }
 
         @media (max-height: 800px) {
             h1 { font-size: 24px; margin: 20px 0 15px 0; }
@@ -350,26 +309,13 @@
             #info { margin-top: 30px; padding: 20px; }
         }
 
-        /* Fullscreen Mode */
-        body.fullscreen {
-            background-color: var(--bg-color);
-            justify-content: center;
-            align-items: center;
-            overflow: hidden;
-        }
+        body.fullscreen { background-color: var(--bg-color); justify-content: center; align-items: center; overflow: hidden; }
         body.fullscreen h1, body.fullscreen #info { display: none; }
         body.fullscreen #device-container {
-            padding: 0;
-            height: 100vh;
-            width: 100vw;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+            padding: 0; height: 100vh; width: 100vw;
+            display: flex; align-items: center; justify-content: center;
         }
-        body.fullscreen #device {
-            box-shadow: 0 0 50px rgba(0,0,0,0.5);
-        }
-        /* In fullscreen, we keep the device look */
+        body.fullscreen #device { box-shadow: 0 0 50px rgba(0,0,0,0.5); }
 
         @media (max-width: 900px) and (orientation: landscape) {
             h1 { display: none; }
@@ -395,7 +341,6 @@
             padding: 4px;
             gap: 4px;
         }
-
         .theme-btn {
             flex: 1;
             background: none;
@@ -410,16 +355,12 @@
             transition: all 0.2s ease;
             color: var(--secondary-text);
         }
-
         .theme-btn.active {
             background: var(--surface-color);
             color: var(--primary-color);
             box-shadow: 0 2px 8px rgba(0,0,0,0.2);
         }
-
-        .theme-btn:hover:not(.active) {
-            background: rgba(255,255,255,0.1);
-        }
+        .theme-btn:hover:not(.active) { background: rgba(255,255,255,0.1); }
     </style>
 </head>
 
@@ -488,20 +429,17 @@
 
     <div id="device-container">
         <div id="device">
-            <!-- Screen area behind the frame -->
             <div id="outScr">
                 <div id="scr">
                     <div id="lcd"></div>
                 </div>
             </div>
-            <!-- Physical device frame on top -->
             <canvas id="key" width="434" height="543"></canvas>
         </div>
     </div>
 
-
     <script>
-        
+
         // ============================================================
         // UI Drawer & Theme Logic
         // ============================================================
@@ -509,17 +447,13 @@
             const drawer = document.getElementById('drawer');
             const overlay = document.getElementById('overlay');
             const isOpen = drawer.classList.contains('open');
-            
             if (isOpen) {
                 drawer.classList.remove('open');
                 overlay.classList.remove('show');
                 setTimeout(() => { if (!drawer.classList.contains('open')) overlay.style.display = 'none'; }, 300);
             } else {
                 overlay.style.display = 'block';
-                setTimeout(() => {
-                    drawer.classList.add('open');
-                    overlay.classList.add('show');
-                }, 10);
+                setTimeout(() => { drawer.classList.add('open'); overlay.classList.add('show'); }, 10);
             }
         }
 
@@ -530,15 +464,11 @@
                 document.documentElement.setAttribute('data-theme', theme);
             }
             localStorage.setItem('wqx_theme', theme);
-            
-            // Update active state
             document.querySelectorAll('.theme-btn').forEach(btn => btn.classList.remove('active'));
             var btn = document.getElementById('theme-' + theme);
             if (btn) btn.classList.add('active');
         }
-        
-  
-        // Restore theme
+
         (function() {
             var savedTheme = localStorage.getItem('wqx_theme') || 'system';
             changeTheme(savedTheme);
@@ -549,14 +479,27 @@
         // ============================================================
         var STATE_STORAGE_KEY = 'wqx_state';
 
+        // ★ 修复：保存前校验 lcdbuffaddr 合法性（必须 > 0x100，否则不保存）
+        function isStateReadyToSave(wqxInstance) {
+            if (!wqxInstance) return false;
+            var addr = wqxInstance.lcdbuffaddr;
+            if (addr === null || addr === undefined || addr <= 0x100) {
+                log('⚠️ lcdbuffaddr=' + addr + '，状态未就绪，跳过保存');
+                return false;
+            }
+            return true;
+        }
+
         function saveAppState(wqxInstance) {
+            // ★ 修复：未就绪时不保存，防止写入坏状态覆盖好存档
+            if (!isStateReadyToSave(wqxInstance)) return false;
             try {
                 var state = wqxInstance.saveState();
                 localStorage.setItem(STATE_STORAGE_KEY, JSON.stringify(state));
                 setFlashStatus('💾 Auto-saved');
                 return true;
             } catch (e) {
-                setFlashStatus('⚠️ Save failed');
+                setFlashStatus('⚠️ Save failed: ' + e.message);
                 return false;
             }
         }
@@ -566,10 +509,17 @@
                 var stored = localStorage.getItem(STATE_STORAGE_KEY);
                 if (!stored) return false;
                 var state = JSON.parse(stored);
+                // ★ 修复：存档里的 lcdbuffaddr 必须合法才允许恢复
+                if (!state || state.lcdbuffaddr === null || state.lcdbuffaddr === undefined || state.lcdbuffaddr <= 0x100) {
+                    log('⚠️ 存档 lcdbuffaddr 不合法（值=' + (state && state.lcdbuffaddr) + '），丢弃存档');
+                    localStorage.removeItem(STATE_STORAGE_KEY);
+                    return false;
+                }
                 wqxInstance.loadState(state);
                 setFlashStatus('✅ Restored');
                 return true;
             } catch (e) {
+                log('loadAppState error: ' + e);
                 return false;
             }
         }
@@ -587,9 +537,7 @@
 
             function startHold() {
                 btn.classList.add('pressing');
-                holdTimer = setTimeout(function () {
-                    clearSavedState();
-                }, HOLD_MS);
+                holdTimer = setTimeout(function () { clearSavedState(); }, HOLD_MS);
             }
 
             function endHold() {
@@ -625,7 +573,6 @@
             log('ERR: ' + msg + ' (' + line + ':' + col + ')', '#f00');
             return false;
         };
-
         window.onunhandledrejection = function(event) {
             log('PROMISE ERR: ' + event.reason, '#f00');
         };
@@ -636,12 +583,6 @@
             if (el) el.textContent = msg;
         }
 
-        function injectAutoSave(wqxInstance) {
-            wqxInstance.onSaveState = function() {
-                saveAppState(wqxInstance);
-            };
-        }
-
         // ============================================================
         // Device UI Rendering & Interaction
         // ============================================================
@@ -650,29 +591,22 @@
         var image = new Image();
         var indicatorStates = new Array(9).fill(false);
         var rulerCenters = [66.4, 98.6, 131.3, 163.8, 195.5, 227.5, 260.1, 292.2, 324.9];
-        var indicatorY = 177.5; // Just below the screen hole
+        var indicatorY = 177.5;
 
         function redrawFrame() {
             if (!image.complete) return;
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             ctx.globalCompositeOperation = 'source-over';
             ctx.drawImage(image, 0, 0);
-            
             ctx.globalCompositeOperation = 'destination-out';
             ctx.fillRect(15, 14, 376, 163);
             ctx.globalCompositeOperation = 'source-over';
-            
             for (var i = 0; i < indicatorStates.length; i++) {
-                if (indicatorStates[i]) {
-                    renderIndicator(i);
-                }
+                if (indicatorStates[i]) renderIndicator(i);
             }
         }
 
-        image.onload = function () {
-            redrawFrame();
-            updateLayout();
-        };
+        image.onload = function () { redrawFrame(); updateLayout(); };
         image.src = 'nc1020.png';
 
         function renderIndicator(index) {
@@ -690,71 +624,40 @@
             if (indicatorStates[index] === active) return;
             indicatorStates[index] = active;
             if (!image.complete) return;
-            
-            var x = rulerCenters[index];
-            var y = indicatorY;
-            
             if (active) {
                 renderIndicator(index);
             } else {
-                // To "erase", we redraw the small patch from the original image.
-                ctx.drawImage(image, x - 5, 177, 10, 10, x - 5, 177, 10, 10);
+                ctx.drawImage(image, rulerCenters[index] - 5, 177, 10, 10, rulerCenters[index] - 5, 177, 10, 10);
             }
         }
 
         function updateLayout() {
             var device = document.getElementById('device');
-            var container = document.getElementById('device-container');
             var isFullscreen = document.body.classList.contains('fullscreen');
-            
             var h1 = document.querySelector('h1');
             var h1Height = (h1 && h1.offsetParent && !isFullscreen) ? h1.offsetHeight + 20 : 0;
-            
             var availableWidth = window.innerWidth - (isFullscreen ? 0 : 40);
             var availableHeight = window.innerHeight - h1Height - (isFullscreen ? 0 : 40);
-            
-            var sWidth = availableWidth / 434;
-            var sHeight = availableHeight / 543;
-            var s = Math.min(sWidth, sHeight);
-            
-            // Allow larger scale in fullscreen
-            if (isFullscreen) {
-                if (s > 2.5) s = 2.5;
-            } else {
-                if (s > 1.5) s = 1.5;
-            }
-            if (s < 0.2) s = 0.2;
-
+            var s = Math.min(availableWidth / 434, availableHeight / 543);
+            s = Math.max(0.2, Math.min(s, isFullscreen ? 2.5 : 1.5));
             device.style.transform = "scale(" + s + ")";
         }
 
         window.addEventListener('resize', updateLayout);
 
-function hasPhysicalKeyboard() {
-    // 检测是否支持鼠标悬停（手机/纯触控平板通常不支持 hover）
-    const canHover = window.matchMedia('(hover: hover)').matches;
-    // 检测是否使用精细指针（如鼠标，而不是粗糙的手指触控）
-    const isFinePointer = window.matchMedia('(pointer: fine)').matches;
-
-    return canHover && isFinePointer;
-}
-
+        function hasPhysicalKeyboard() {
+            return window.matchMedia('(hover: hover)').matches && window.matchMedia('(pointer: fine)').matches;
+        }
 
         async function toggleFullscreen() {
             if (!document.fullscreenElement) {
                 try {
-                    // 如果有实体键盘，仅将 LCD (outScr) 全屏；否则将整个页面全屏
                     const target = hasPhysicalKeyboard() ? document.getElementById('outScr') : document.documentElement;
                     await target.requestFullscreen();
-                } catch (err) {
-                    console.error(`无法进入全屏: ${err.message}`);
-                }
+                } catch (err) { console.error('无法进入全屏:', err.message); }
             } else {
-                try {
-                    await document.exitFullscreen();
-                } catch (err) {
-                    console.error(`无法退出全屏: ${err.message}`);
-                }
+                try { await document.exitFullscreen(); }
+                catch (err) { console.error('无法退出全屏:', err.message); }
             }
         }
 
@@ -762,17 +665,12 @@ function hasPhysicalKeyboard() {
             var outScr = document.getElementById('outScr');
             var scr = document.getElementById('scr');
             var isFullscreen = !!document.fullscreenElement;
-
             if (isFullscreen) {
                 document.body.classList.add('fullscreen');
                 if (document.fullscreenElement === outScr) {
-                    // LCD 仅全屏模式
-                    var sWidth = window.innerWidth / 320;
-                    var sHeight = window.innerHeight / 160;
-                    var s = Math.min(sWidth, sHeight);
+                    var s = Math.min(window.innerWidth / 320, window.innerHeight / 160);
                     scr.style.transform = "scale(" + s + ")";
                 } else {
-                    // 整个虚拟机全屏模式
                     updateLayout();
                 }
             } else {
@@ -782,13 +680,8 @@ function hasPhysicalKeyboard() {
             }
         }
 
-        document.addEventListener('fullscreenchange', () => {
-            updateScrLayout();
-        });
+        document.addEventListener('fullscreenchange', updateScrLayout);
 
-
-
-        // Key mapping coordinates
         var keys = [
             { name: 'F1', x: 403, y: 10, width: 28, height: 30 },
             { name: 'F2', x: 403, y: 45, width: 28, height: 30 },
@@ -850,30 +743,23 @@ function hasPhysicalKeyboard() {
             var s = rect.width / 434;
             var x = (e.clientX - rect.left) / s;
             var y = (e.clientY - rect.top) / s;
-            var key = getKeyAt(x, y);
-            keyAction(key, isDown);
+            keyAction(getKeyAt(x, y), isDown);
         }
 
-        canvas.addEventListener('mousedown', function (e) { handleMouseEvent(e, true); });
-        canvas.addEventListener('mouseup', function (e) { handleMouseEvent(e, false); });
-        canvas.addEventListener('mouseleave', function (e) { handleMouseEvent(e, false); });
-        canvas.addEventListener('touchstart', function (e) {
+        canvas.addEventListener('mousedown', function(e) { handleMouseEvent(e, true); });
+        canvas.addEventListener('mouseup', function(e) { handleMouseEvent(e, false); });
+        canvas.addEventListener('mouseleave', function(e) { handleMouseEvent(e, false); });
+        canvas.addEventListener('touchstart', function(e) {
             e.preventDefault();
             var rect = canvas.getBoundingClientRect();
             var s = rect.width / 434;
-            var x = (e.touches[0].clientX - rect.left) / s;
-            var y = (e.touches[0].clientY - rect.top) / s;
-            var key = getKeyAt(x, y);
-            keyAction(key, true);
+            keyAction(getKeyAt((e.touches[0].clientX - rect.left) / s, (e.touches[0].clientY - rect.top) / s), true);
         }, {passive: false});
-        canvas.addEventListener('touchend', function (e) {
+        canvas.addEventListener('touchend', function(e) {
             e.preventDefault();
             var rect = canvas.getBoundingClientRect();
             var s = rect.width / 434;
-            var x = (e.changedTouches[0].clientX - rect.left) / s;
-            var y = (e.changedTouches[0].clientY - rect.top) / s;
-            var key = getKeyAt(x, y);
-            keyAction(key, false);
+            keyAction(getKeyAt((e.changedTouches[0].clientX - rect.left) / s, (e.changedTouches[0].clientY - rect.top) / s), false);
         }, {passive: false});
 
         function getKeyAt(x, y) {
@@ -904,82 +790,63 @@ function hasPhysicalKeyboard() {
         var wqx = new Wqx(wqxDiv);
         var keyInput = new WqxKeyInput(wqx, document.body);
 
-        // Hook LCD segments (indicators)
-        // NC1020 ruler indicators are bit 7 of the first byte (col 0) of rows 64-72
+        // ★ 修复：monkey-patch updateLCD 时先检查 lcdbuffaddr 是否合法
         var _origUpdateLCD = wqx.updateLCD.bind(wqx);
         wqx.updateLCD = function(addr, value) {
+            // lcdbuffaddr 未就绪时直接跳过，避免 NaN 计算
+            if (!this.lcdbuffaddr || this.lcdbuffaddr <= 0x100) return;
             var offset = addr - this.lcdbuffaddr;
+            if (offset < 0 || offset >= 1600) return;
             var row = Math.floor(offset / 20);
             var col = offset % 20;
-            
             if (col === 0) {
                 var active = (value & 0x80) !== 0;
                 if (row >= 64 && row <= 72) {
                     drawIndicator(row - 64, active);
                 }
-                // Other indicators (top icons etc.) could be added here
             }
-            
             _origUpdateLCD(addr, value);
         };
 
-        injectAutoSave(wqx);
+        // FLS 拖放更新
+        document.addEventListener('dragover', function(e) { e.preventDefault(); });
+        document.addEventListener('drop', function(e) {
+            e.preventDefault();
+            var file = e.dataTransfer.files[0];
+            if (!file || !file.name.endsWith('.fls')) return;
+            var reader = new FileReader();
+            reader.onload = function(ev) {
+                wqx.loadNorFlash(ev.target.result);
+                saveAppState(wqx);
+                setFlashStatus('💾 已加载 ' + file.name);
+            };
+            reader.readAsArrayBuffer(file);
+        });
 
         var romLoaded = false;
         var norLoaded = false;
-        var _stateRestored = false; 
+        var _stateRestored = false;
 
-// 查看device元素的事件监听
-var el = document.getElementById('device');
-console.log('device tagName:', el.tagName);
-console.log('device parent:', el.parentElement.id, el.parentElement.tagName);
-
-// 试试绑定到document而不是device
-document.addEventListener('dragover', function(e){ e.preventDefault(); });
-document.addEventListener('drop', function(e){
-    e.preventDefault();
-    var file = e.dataTransfer.files[0];
-    console.log('document drop:', file ? file.name : 'null');
-    if (!file || !file.name.endsWith('.fls')) return;
-    var reader = new FileReader();
-    reader.onload = function(ev){
-        wqx.loadNorFlash(ev.target.result);
-        saveAppState(wqx);
-        setFlashStatus('💾 已加载 ' + file.name);
-    };
-    reader.readAsArrayBuffer(file);
-});
-console.log('可以试试拖放fls文件来更新固件');
-        
-
-
-function check() {
-    if (romLoaded && norLoaded) {
-        if (_stateRestored) {
-            // 从存档恢复：不reset，先同步日期
-            wqx.syncCalendar();
-            wqx.startFrame(); // 只启动定时器，不resetCpu
-            // 延时同步时钟，避免干扰启动逻辑
-            setTimeout(() => {
-                wqx.syncClock();
-                log('Delayed clock sync completed');
-            }, 2000);
-        } else {
-            wqx.run(); // 全新启动，resetCpu+syncCalendar+syncClock
-                    // 确保即便全新启动也同步日历
-                    wqx.syncCalendar();
+        function check() {
+            if (!romLoaded || !norLoaded) return;
+            if (_stateRestored) {
+                wqx.syncCalendar();
+                wqx.startFrame();
+                setTimeout(() => { wqx.syncClock(); log('Delayed clock sync completed'); }, 2000);
+            } else {
+                wqx.run();
+                wqx.syncCalendar();
+            }
+            document.getElementById('run').disabled = true;
+            document.getElementById('stop').disabled = false;
         }
-        document.getElementById('run').disabled = true;
-        document.getElementById('stop').disabled = false;
-    }
-}
 
         function loadZip() {
             log('Loading rom.zip...');
             var xhrZip = new XMLHttpRequest();
             xhrZip.open('GET', 'rom.zip', true);
             xhrZip.responseType = 'arraybuffer';
-            xhrZip.onload = function () {
+            xhrZip.onload = function() {
                 if (xhrZip.status === 200) {
                     log('rom.zip loaded, mounting BFS...');
                     mountBFS(xhrZip.response);
@@ -987,47 +854,33 @@ function check() {
                     setFlashStatus('❌ ROM Load Error: ' + xhrZip.status);
                 }
             };
-            xhrZip.onerror = function() {
-                setFlashStatus('❌ Network Error');
-            };
+            xhrZip.onerror = function() { setFlashStatus('❌ Network Error'); };
             xhrZip.send();
         }
 
         function mountBFS(zipData) {
             try {
                 var Buffer = BrowserFS.BFSRequire('buffer').Buffer;
-                BrowserFS.configure({
-                    fs: "ZipFS",
-                    options: { zipData: Buffer.from(zipData) }
-                }, function (e) {
-                    if (e) {
-                        setFlashStatus('❌ FS Error: ' + e);
-                        return;
-                    }
+                BrowserFS.configure({ fs: "ZipFS", options: { zipData: Buffer.from(zipData) } }, function(e) {
+                    if (e) { setFlashStatus('❌ FS Error: ' + e); return; }
                     log('BFS configured, reading files...');
                     var fs = BrowserFS.BFSRequire('fs');
-                    fs.readFile('/obj_lu.bin', function (err, data) {
-                        if (err) {
-                            setFlashStatus('❌ Missing obj_lu.bin');
-                            return;
-                        }
+                    fs.readFile('/obj_lu.bin', function(err, data) {
+                        if (err) { setFlashStatus('❌ Missing obj_lu.bin'); return; }
                         log('obj_lu.bin loaded');
                         wqx.loadBROM(data);
                         romLoaded = true;
 
-                        // 先判断是否有存档
+                        // ★ 修复：ROM加载完成后再检查存档，保证 volume array 已就绪
                         if (loadAppState(wqx)) {
                             log('State restored from storage');
                             norLoaded = true;
                             _stateRestored = true;
                             check();
                         } else {
-                            log('No saved state, reading nc1020.fls...');
-                            fs.readFile('/nc1020.fls', function (err, data) {
-                                if (err) {
-                                    setFlashStatus('❌ Missing nc1020.fls');
-                                    return;
-                                }
+                            log('No valid saved state, reading nc1020.fls...');
+                            fs.readFile('/nc1020.fls', function(err, data) {
+                                if (err) { setFlashStatus('❌ Missing nc1020.fls'); return; }
                                 log('nc1020.fls loaded');
                                 wqx.loadNorFlash(data);
                                 norLoaded = true;
@@ -1052,64 +905,48 @@ function check() {
             document.getElementById('stop').disabled = true;
             document.getElementById('run').disabled = false;
         }
-        function reset() {
-            wqx.reset();
-        }
+        function reset() { wqx.reset(); }
 
         window.addEventListener('load', function() {
             log('App started, initializing...');
-            try { 
-                loadZip(); 
-            } catch (e) { 
-                log('Fatal initialization error: ' + e, '#f00'); 
-            }
+            try { loadZip(); }
+            catch(e) { log('Fatal initialization error: ' + e, '#f00'); }
 
-            // 移除页面底部的冗余 loadAppState 调用，统一在 mountBFS 中处理
-            // if (loadAppState(wqx)) {
-            //     norLoaded = true;
-            //     _stateRestored = true;
-            //     check();
-            // }
-
-            // Auto-save state when page is hidden or closed
-            window.addEventListener('pagehide', () => {
+            window.addEventListener('pagehide', function() {
                 if (wqx) saveAppState(wqx);
             });
-
-            document.addEventListener('visibilitychange', () => {
-                if (document.visibilityState === 'hidden') {
-                    if (wqx) saveAppState(wqx);
-                }
+            document.addEventListener('visibilitychange', function() {
+                if (document.visibilityState === 'hidden' && wqx) saveAppState(wqx);
             });
 
             if ('serviceWorker' in navigator) {
                 navigator.serviceWorker.register('./sw.js').then(function(registration) {
-                    log('ServiceWorker registration successful with scope: ' + registration.scope);
-
+                    log('SW registered: ' + registration.scope);
                     registration.onupdatefound = function() {
                         var installingWorker = registration.installing;
                         installingWorker.onstatechange = function() {
                             if (installingWorker.state === 'installed') {
                                 if (navigator.serviceWorker.controller) {
-                                    log('New content is available; please refresh.');
+                                    log('New content available.');
                                     if (confirm('新版本已就绪，是否立即刷新以同步服务器版本？')) {
                                         window.location.reload();
                                     }
                                 } else {
-                                    log('Content is cached for offline use.');
+                                    log('Content cached for offline use.');
                                 }
                             }
                         };
                     };
                 }, function(err) {
-                    log('ServiceWorker registration failed: ' + err, '#f00');
+                    log('SW registration failed: ' + err, '#f00');
                 });
 
-                var refreshing;
+                // ★ 修复：refreshing 赋值必须在 reload 之前，防止死循环
+                var refreshing = false;
                 navigator.serviceWorker.addEventListener('controllerchange', function() {
                     if (refreshing) return;
+                    refreshing = true;      // ← 先标记，再 reload
                     window.location.reload();
-                    refreshing = true;
                 });
             }
         });
@@ -1121,70 +958,47 @@ function check() {
         const installBtn = document.getElementById('install-btn');
 
         window.addEventListener('beforeinstallprompt', (e) => {
-            // Prevent the mini-infobar from appearing on mobile
             e.preventDefault();
-            // Stash the event so it can be triggered later.
             deferredPrompt = e;
-            // Update UI notify the user they can install the PWA
             if (installBtn) installBtn.style.display = 'block';
             log('PWA install prompt available');
         });
 
         async function installPWA() {
             if (!deferredPrompt) return;
-            // Show the install prompt
             deferredPrompt.prompt();
-            // Wait for the user to respond to the prompt
             const { outcome } = await deferredPrompt.userChoice;
-            log(`User response to the install prompt: ${outcome}`);
-            // We've used the prompt, and can't use it again, throw it away
+            log('User response: ' + outcome);
             deferredPrompt = null;
-            // Hide the install button
             if (installBtn) installBtn.style.display = 'none';
         }
 
         async function clearAppCache() {
-            if (confirm('确定要清除应用缓存并重新加载吗？这可能有助于解决某些显示或运行问题。')) {
+            if (confirm('确定要清除应用缓存并重新加载吗？')) {
                 try {
-                    // Unregister service workers
                     if ('serviceWorker' in navigator) {
                         const registrations = await navigator.serviceWorker.getRegistrations();
-                        for (const registration of registrations) {
-                            await registration.unregister();
-                        }
+                        for (const r of registrations) await r.unregister();
                     }
-                    // Delete caches
                     if ('caches' in window) {
-                        const cacheNames = await caches.keys();
-                        for (const cacheName of cacheNames) {
-                            await caches.delete(cacheName);
-                        }
+                        const names = await caches.keys();
+                        for (const name of names) await caches.delete(name);
                     }
-                    // Reload
                     window.location.reload(true);
                 } catch (err) {
-                    console.error('Clear cache failed:', err);
                     alert('清除缓存失败: ' + err.message);
                 }
             }
         }
 
-        window.addEventListener('appinstalled', (event) => {
-            log('PWA installed successfully');
+        window.addEventListener('appinstalled', () => {
+            log('PWA installed');
             if (installBtn) installBtn.style.display = 'none';
         });
 
-        // Handle canvas context loss
-        canvas.addEventListener('webglcontextlost', function(e) {
-            e.preventDefault();
-            log('Canvas context lost!', '#f00');
-        }, false);
+        canvas.addEventListener('webglcontextlost', function(e) { e.preventDefault(); log('Canvas context lost!', '#f00'); }, false);
+        canvas.addEventListener('contextrestored', function() { log('Canvas context restored'); redrawFrame(); }, false);
 
-        canvas.addEventListener('contextrestored', function() {
-            log('Canvas context restored');
-            redrawFrame();
-        }, false);
     </script>
 </body>
-
 </html>
