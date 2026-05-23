@@ -346,14 +346,17 @@ var Wqx = (function (){
         if (this.ram[io00_bank_switch] !== bank) {
             if (bank < 0x20) {
                 this.may4000ptr = this.norbankheader[bank];
-            } else if (bank >= 0x80) {
+            } else if (bank < 0x80) {
+                this.may4000ptr = this.volume0array[bank];
+            } else {
                 var vol = this.ram[io0D_volumeid] & 0x03;
+                var realBank = bank & 0x7F;
                 if (vol === 1) {
-                    this.may4000ptr = this.volume1array[bank];
+                    this.may4000ptr = this.volume1array[realBank];
                 } else if (vol === 3) {
-                    this.may4000ptr = this.volume2array[bank];
+                    this.may4000ptr = this.volume2array[realBank];
                 } else {
-                    this.may4000ptr = this.volume0array[bank];
+                    this.may4000ptr = this.volume0array[realBank];
                 }
             }
             this.switch4000ToBFFF();
@@ -424,9 +427,7 @@ var Wqx = (function (){
     };
 
     Wqx.prototype.write06LCDStartAddr = function (value){
-        if (this.lcdbuffaddr == null) {
-            this.setLcdStartAddr(((this.ram[io0C_lcd_config] & 0x03) << 12) | (value << 4));
-        }
+        this.setLcdStartAddr(((this.ram[io0C_lcd_config] & 0x03) << 12) | (value << 4));
         this.ram[io06_lcd_config] = value;
         this.ram[io09_port1_data] &= 0xFE;
     };
@@ -491,9 +492,7 @@ var Wqx = (function (){
     };
 
     Wqx.prototype.writeTimer01Control = function (value){
-        if (this.lcdbuffaddr === null) {
-            this.lcdbuffaddr = ((value & 0x03) << 12) | (this.ram[io06_lcd_config] << 4);
-        }
+        this.setLcdStartAddr(((value & 0x03) << 12) | (this.ram[io06_lcd_config] << 4));
         this.ram[io0C_lcd_config] = value;
     };
 
@@ -501,18 +500,18 @@ var Wqx = (function (){
         _trace('write0DVolumeIDLCDSegCtrl');
         if (value !== this.ram[io0D_volumeid]) {
             var bank = this.ram[io00_bank_switch];
-            if ((value & 0x03) === 1) {
-                this.fillC000BIOSBank(this.volume1array);
-                this.may4000ptr = this.volume1array[bank];
-                this.memmap[mapE000] = getByteArray(this.volume1array[0], 0x2000, 0x2000);
-            } else if ((value & 0x03) === 3) {
-                this.fillC000BIOSBank(this.volume2array);
-                this.may4000ptr = this.volume2array[bank];
-                this.memmap[mapE000] = getByteArray(this.volume2array[0], 0x2000, 0x2000);
-            } else {
-                this.fillC000BIOSBank(this.volume0array);
+            var vol = value & 0x03;
+            var volArray = (vol === 1) ? this.volume1array : (vol === 3 ? this.volume2array : this.volume0array);
+
+            this.fillC000BIOSBank(volArray);
+            this.memmap[mapE000] = getByteArray(volArray[0], 0x2000, 0x2000);
+
+            if (bank >= 0x80) {
+                this.may4000ptr = volArray[bank & 0x7F];
+            } else if (bank >= 0x20) {
                 this.may4000ptr = this.volume0array[bank];
-                this.memmap[mapE000] = getByteArray(this.volume0array[0], 0x2000, 0x2000);
+            } else {
+                this.may4000ptr = this.norbankheader[bank];
             }
             var roabbs = this.ram[io0A_roa];
             // 对应C++ SwitchVolume: memmap[1] 根据 roa_bbs bit2 决定
@@ -858,7 +857,8 @@ var Wqx = (function (){
             if (++this.clockRecords[1] >= 60) {
                 this.clockRecords[1] = 0;
                 // 小时只用低6位计数，高2位是标志位
-                if ((this.clockRecords[2] & 0x3F) >= 23) {
+                var h = (this.clockRecords[2] & 0x3F) + 1;
+                if (h >= 24) {
                     this.clockRecords[2] &= 0xC0; // 保留高2位，清零小时计数
                     this.clockRecords[14] = (this.clockRecords[14] + 1) % 7;
                     if (++this.clockRecords[3] > 31) {
@@ -869,7 +869,7 @@ var Wqx = (function (){
                         }
                     }
                 } else {
-                    this.clockRecords[2]++;
+                    this.clockRecords[2] = (this.clockRecords[2] & 0xC0) | h;
                 }
             }
         }
@@ -1018,14 +1018,17 @@ Wqx.prototype.loadState = function (state){
         // 重映射 4000-BFFF
         if (bank < 0x20) {
             this.may4000ptr = this.norbankheader[bank];
-        } else if (bank >= 0x80) {
+        } else if (bank < 0x80) {
+            this.may4000ptr = this.volume0array[bank];
+        } else {
             var vol = volumeid & 0x03;
+            var realBank = bank & 0x7F;
             if (vol === 1) {
-                this.may4000ptr = this.volume1array[bank];
+                this.may4000ptr = this.volume1array[realBank];
             } else if (vol === 3) {
-                this.may4000ptr = this.volume2array[bank];
+                this.may4000ptr = this.volume2array[realBank];
             } else {
-                this.may4000ptr = this.volume0array[bank];
+                this.may4000ptr = this.volume0array[realBank];
             }
         }
         this.switch4000ToBFFF();
@@ -1084,10 +1087,16 @@ Wqx.prototype.refreshLCD = function (){
         _trace('syncCalendar');
         var now = new Date();
 
+        // RTC 寄存器同步
+        this.clockRecords[3] = now.getDate();
+        this.clockRecords[8] = now.getMonth() + 1;
+        this.clockRecords[9] = now.getFullYear() % 100;
+        this.clockRecords[14] = now.getDay(); // 0-6
+
         // 兼容某些固件使用的 RAM 备份
         this.ram[0x472] = now.getFullYear() - 1881; // 年份偏移1881
-        this.ram[0x473] = now.getMonth();           // 月份0-based
-        this.ram[0x474] = now.getDate() - 1;        // 日
+        this.ram[0x473] = now.getMonth() + 1;       // 月份 1-12
+        this.ram[0x474] = now.getDate();            // 日
     };
 
     // 从存档恢复后调用：只启动帧定时器，不resetCpu，保留已恢复的CPU状态
@@ -1116,6 +1125,8 @@ Wqx.prototype.refreshLCD = function (){
     Wqx.prototype.reset = function (){
         _trace('reset');
         this.ram.fill(0);
+        this.initIo();
+        this.initMemmap();
         this.resetCpu();
         this.frameCounter = 0;
         this.nmiCounter = 0;
@@ -1131,7 +1142,12 @@ Wqx.prototype.refreshLCD = function (){
 
         while (this.cpu.cycles < frameCycles) {
 
-            this.cpu.execute();
+            if (!this.slept) {
+                this.cpu.execute();
+            } else {
+                // 睡眠模式下，跳过指令执行但保持周期推进，用于维持RTC节奏
+                this.cpu.cycles += 100; // 模拟推进，防止死循环
+            }
 
             // NMI / timer0（每0.5秒触发一次）
             if (this.cpu.cycles >= nmiCycles) {
