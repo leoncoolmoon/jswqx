@@ -256,9 +256,10 @@ var Wqx = (function (){
             case 0x00: return this.read00BankSwitch();
             case 0x02: return this.read02Timer0Value();
             case 0x04: return this.read04StopTimer0();
-            case 0x05: return this.read05StartTimer0;
+            case 0x05: return this.read05StartTimer0();
             case 0x06: return this.read06StopTimer1();
             case 0x07: return this.read07StartTimer1();
+            case 0x0C: return this.ram[0x0C];
             case 0x3B: return this.read3BUnknown();
             case 0x3F: return this.read3FClock();
             case 0x045F:
@@ -346,7 +347,7 @@ var Wqx = (function (){
         if (this.ram[io00_bank_switch] !== bank) {
             if (bank < 0x20) {
                 this.may4000ptr = this.norbankheader[bank];
-            } else if (bank >= 0x80) {
+            } else {
                 if (this.ram[io0D_volumeid] & 0x01) {
                     this.may4000ptr = this.volume1array[bank];
                 } else if (this.ram[io0D_volumeid] & 0x02) {
@@ -554,6 +555,45 @@ var Wqx = (function (){
     Wqx.prototype.write20JG = function (value){
         this.ram[io20_JG] = value;
         if (value === 0x80 || value === 0x40) {
+            var src = this.ram[0x40] | (this.ram[0x41] << 8);
+            var bank = this.ram[0x42];
+            var dest = this.ram[0x43] | (this.ram[0x44] << 8);
+            var len = this.ram[0x45] | (this.ram[0x46] << 8);
+
+            var srcPtr = null;
+            if (bank < 0x20) {
+                srcPtr = this.norbankheader[bank];
+            } else {
+                if (this.ram[io0D_volumeid] & 0x01) {
+                    srcPtr = this.volume1array[bank];
+                } else if (this.ram[io0D_volumeid] & 0x02) {
+                    srcPtr = this.volume2array[bank];
+                } else {
+                    srcPtr = this.volume0array[bank];
+                }
+            }
+
+            if (value === 0x80) { // Block Move
+                for (var i = 0; i < len; i++) {
+                    var b;
+                    if (srcPtr) {
+                        b = srcPtr[(src + i - 0x4000) & 0x7FFF];
+                    } else {
+                        b = this.readIO((src + i) & 0xFFFF);
+                    }
+                    this.writeIO((dest + i) & 0xFFFF, b);
+                }
+            } else { // Block Fill
+                var b;
+                if (srcPtr) {
+                    b = srcPtr[(src - 0x4000) & 0x7FFF];
+                } else {
+                    b = this.readIO(src & 0xFFFF);
+                }
+                for (var i = 0; i < len; i++) {
+                    this.writeIO((dest + i) & 0xFFFF, b);
+                }
+            }
             this.ram[io20_JG] = 0;
         }
     };
@@ -890,6 +930,8 @@ Wqx.prototype.saveState = function (){
         nor: uint8ArrayToBase64(this.nor),
         ramRomBank1: uint8ArrayToBase64(this.ramRomBank1),
         zp40cache: uint8ArrayToBase64(this.zp40cache),
+        clockRecords: uint8ArrayToBase64(this.clockRecords),
+        keypadmatrix: uint8ArrayToBase64(this.keypadmatrix),
         cpu: {
             reg_a: this.cpu.reg_a,
             reg_x: this.cpu.reg_x,
@@ -929,6 +971,8 @@ Wqx.prototype.loadState = function (state){
         this.nor.set(base64ToUint8Array(state.nor));
         this.ramRomBank1.set(base64ToUint8Array(state.ramRomBank1));
         this.zp40cache.set(base64ToUint8Array(state.zp40cache));
+        if (state.clockRecords) this.clockRecords.set(base64ToUint8Array(state.clockRecords));
+        if (state.keypadmatrix) this.keypadmatrix.set(base64ToUint8Array(state.keypadmatrix));
         
         // 重建 NOR 视图（重要！）
         for (var i = 0; i < 32; i++) {
@@ -996,7 +1040,7 @@ Wqx.prototype.loadState = function (state){
         // 重映射 4000-BFFF
         if (bank < 0x20) {
             this.may4000ptr = this.norbankheader[bank];
-        } else if (bank >= 0x80) {
+        } else {
             if (volumeid & 0x01) {
                 this.may4000ptr = this.volume1array[bank];
             } else if (volumeid & 0x02) {
@@ -1017,6 +1061,7 @@ Wqx.prototype.loadState = function (state){
         // 恢复 LCD 缓冲区地址
         var lcdAddr = ((this.ram[io0C_lcd_config] & 0x03) << 12) | (this.ram[io06_lcd_config] << 4);
         this.setLcdStartAddr(lcdAddr);
+        this.refreshLCD();
         
         // 如果保存了 lcdbuffaddr，直接恢复
         if (state.lcdbuffaddr !== null && state.lcdbuffaddr !== undefined) {
@@ -1042,7 +1087,9 @@ Wqx.prototype.refreshLCD = function (){
     if (!this.lcdbuffaddr) return;
     for (var i = 0; i < 1600; i++) {
         var addr = this.lcdbuffaddr + i;
-        this.updateLCD(addr, this.ram[addr]);
+            var b = this.ram[addr];
+            this.ram[addr] = b ^ 0xFF; // Toggle bits
+            this.updateLCD(addr, b);   // updateLCD will see the 'change' and redraw
     }
 };
 
@@ -1092,6 +1139,9 @@ Wqx.prototype.refreshLCD = function (){
 
     Wqx.prototype.reset = function (){
         _trace('reset');
+        this.ram.fill(0);
+        this.initIo();
+        this.initMemmap();
         this.resetCpu();
         this.frameCounter = 0;
         this.nmiCounter = 0;

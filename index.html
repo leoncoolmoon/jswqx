@@ -382,6 +382,11 @@
             <div class="controls-grid">
                 <button id="run" onclick="run();" disabled>Run</button>
                 <button id="stop" onclick="stop();" disabled>Stop</button>
+                <button onmousedown="keyInput.keyDown('PgUp')" onmouseup="keyInput.keyUp('PgUp')" ontouchstart="keyInput.keyDown('PgUp')" ontouchend="keyInput.keyUp('PgUp')">PgUp</button>
+                <button onmousedown="keyInput.keyDown('PgDn')" onmouseup="keyInput.keyUp('PgDn')" ontouchstart="keyInput.keyDown('PgDn')" ontouchend="keyInput.keyUp('PgDn')">PgDn</button>
+                <button onmousedown="keyInput.keyDown('Enter')" onmouseup="keyInput.keyUp('Enter')" ontouchstart="keyInput.keyDown('Enter')" ontouchend="keyInput.keyUp('Enter')">Enter</button>
+                <button onmousedown="keyInput.keyDown('Esc')" onmouseup="keyInput.keyUp('Esc')" ontouchstart="keyInput.keyDown('Esc')" ontouchend="keyInput.keyUp('Esc')">Esc</button>
+                <button class="full-width" onmousedown="keyInput.keyDown('Tab')" onmouseup="keyInput.keyUp('Tab')" ontouchstart="keyInput.keyDown('Tab')" ontouchend="keyInput.keyUp('Tab')">Help</button>
                 <button id="reset" class="full-width" title="Click: Reset CPU&#10;Hold 2s: Clear save">Reset Device</button>
                 <div id="flash_status" class="full-width" style="margin:0; padding:0; border:none; font-size:12px;">Initializing...</div>
             </div>
@@ -481,7 +486,7 @@
 
         // ★ 修复：保存前校验 lcdbuffaddr 合法性（必须 > 0x100，否则不保存）
         function isStateReadyToSave(wqxInstance) {
-            if (!wqxInstance) return false;
+            if (!wqxInstance || !wqxInstance.cpu) return false;
             var addr = wqxInstance.lcdbuffaddr;
             if (addr === null || addr === undefined || addr <= 0x100) {
                 log('⚠️ lcdbuffaddr=' + addr + '，状态未就绪，跳过保存');
@@ -510,8 +515,8 @@
                 if (!stored) return false;
                 var state = JSON.parse(stored);
                 // ★ 修复：存档里的 lcdbuffaddr 必须合法才允许恢复
-                if (!state || state.lcdbuffaddr === null || state.lcdbuffaddr === undefined || state.lcdbuffaddr <= 0x100) {
-                    log('⚠️ 存档 lcdbuffaddr 不合法（值=' + (state && state.lcdbuffaddr) + '），丢弃存档');
+                if (!state || !state.cpu || state.lcdbuffaddr === null || state.lcdbuffaddr === undefined || state.lcdbuffaddr <= 0x100) {
+                    log('⚠️ 存档无效或未就绪（lcdbuffaddr=' + (state && state.lcdbuffaddr) + '），丢弃存档');
                     localStorage.removeItem(STATE_STORAGE_KEY);
                     return false;
                 }
