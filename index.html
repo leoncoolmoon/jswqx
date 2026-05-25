@@ -920,34 +920,32 @@
             });
 
             if ('serviceWorker' in navigator) {
-                navigator.serviceWorker.register('./sw.js').then(function(registration) {
-                    log('SW registered: ' + registration.scope);
-                    registration.onupdatefound = function() {
-                        var installingWorker = registration.installing;
-                        installingWorker.onstatechange = function() {
-                            if (installingWorker.state === 'installed') {
-                                if (navigator.serviceWorker.controller) {
-                                    log('New content available.');
-                                    if (confirm('新版本已就绪，是否立即刷新以同步服务器版本？')) {
-                                        window.location.reload();
-                                    }
-                                } else {
-                                    log('Content cached for offline use.');
-                                }
-                            }
-                        };
-                    };
-                }, function(err) {
-                    log('SW registration failed: ' + err, '#f00');
-                });
-
-                // ★ 修复：refreshing 赋值必须在 reload 之前，防止死循环
                 var refreshing = false;
-                navigator.serviceWorker.addEventListener('controllerchange', function() {
-                    if (refreshing) return;
-                    refreshing = true;      // ← 先标记，再 reload
-                    window.location.reload();
-                });
+                    navigator.serviceWorker.addEventListener('controllerchange', function() {
+                        if (refreshing) return;
+                        refreshing = true;
+                        window.location.reload();
+                    });
+                    
+                    navigator.serviceWorker.register('./sw.js').then(function(registration) {
+                        log('SW registered: ' + registration.scope);
+                        registration.onupdatefound = function() {
+                            var installingWorker = registration.installing;
+                            installingWorker.onstatechange = function() {
+                                if (installingWorker.state === 'installed') {
+                                    if (navigator.serviceWorker.controller) {
+                                        log('新版本已就绪，将自动刷新...');
+                                        setFlashStatus('🔄 更新中...');
+                                        // 不弹 confirm，让 controllerchange 自动处理刷新
+                                    } else {
+                                        log('Content cached for offline use.');
+                                    }
+                                }
+                            };
+                        };
+                    }, function(err) {
+                        log('SW registration failed: ' + err, '#f00');
+                    });
             }
         });
 
